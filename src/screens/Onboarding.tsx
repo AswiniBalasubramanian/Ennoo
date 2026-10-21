@@ -551,15 +551,21 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     <span className="num">{fmt(target)}</span> <span style={{ fontSize: 24, fontStyle: "italic" }}>{unit}</span>
                   </p>
                   <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>{days} days, about {fmt(round(perWeek))} {unit} a week</p>
+                  {/* the motto as a pull quote: a large hanging opening mark, italic serif, a soft closing mark */}
+                  {motto.trim() && (
+                    <blockquote style={{ position: "relative", margin: "20px 0 0", padding: "4px 0 0 22px" }}>
+                      <span aria-hidden style={{ position: "absolute", left: -2, top: -10, fontFamily: "var(--serif)", fontSize: 54, lineHeight: 1, color: "#3D8BFF" }}>“</span>
+                      <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 19, lineHeight: 1.22, color: "#fff", textWrap: "balance" }}>
+                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 32, lineHeight: 0, color: "#3D8BFF", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
+                      </p>
+                    </blockquote>
+                  )}
                   <div style={{ flex: 1, minHeight: 0, margin: "14px 4px 8px" }}>
                     <GoalRoute days={days} current={current} target={target} unit={unit} />
                   </div>
-                  {motto.trim() && (
-                    <p style={{ paddingLeft: 10, borderLeft: "2px solid var(--blue)", fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 17, lineHeight: 1.25 }}>"{motto.trim()}"</p>
-                  )}
                   {/* signed like a pledge, in a handwritten script */}
                   {first && (
-                    <p style={{ marginTop: motto.trim() ? 10 : 0, textAlign: "right", fontSize: 13, color: "rgba(255,255,255,0.72)" }}>
+                    <p style={{ textAlign: "right", fontSize: 13, color: "rgba(255,255,255,0.72)" }}>
                       by <span style={{ fontFamily: "var(--signature)", fontSize: 36, lineHeight: 0.8, color: "#fff", marginLeft: 4 }}>{first}</span>
                     </p>
                   )}
