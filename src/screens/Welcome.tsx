@@ -11,7 +11,7 @@ const rise = (d: number) => ({
 /*
   Welcome: the existing app's idea (every sport, drifting past) told in the new cinematic voice.
   Runners photo = atmosphere. Three rows of sport photos drift in alternate directions over it,
-  graded vintage so mixed stock reads as one set, and dissolve into black before the headline.
+  graded vivid so mixed stock reads as one set, and dissolve into deep blue before the headline.
 */
 function Row({ photos, dir, delay, still }: { photos: string[]; dir: 1 | -1; delay: number; still: boolean }) {
   const strip = [...photos, ...photos, ...photos];
@@ -33,20 +33,21 @@ function Row({ photos, dir, delay, still }: { photos: string[]; dir: 1 | -1; del
 export default function Welcome({ go }: { go: (r: Route) => void }) {
   const reduce = useReducedMotion();
   return (
-    <div className="body" style={{ background: "#05070D", color: "#fff", overflow: "hidden" }}>
+    <div className="body" style={{ background: "#030B24", color: "#fff", overflow: "hidden" }}>
       <StatusBar onBlue />
 
       <motion.img
         src="/img/welcome-blur.webp" alt="A runner in motion against a blue sky"
         onError={(e) => { const i = e.currentTarget; if (!i.src.endsWith("/img/welcome.jpg")) i.src = "/img/welcome.jpg"; }}
-        initial={{ scale: 1.14, opacity: 0 }} animate={{ scale: reduce ? 1.14 : 1.04, opacity: 0.7 }}
+        initial={{ scale: 1.14, opacity: 0 }} animate={{ scale: reduce ? 1.14 : 1.04, opacity: 0.9 }}
         transition={{ scale: { duration: 6, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: 0.9 } }}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "62% 30%", filter: "saturate(0.9) contrast(1.08) brightness(0.9) sepia(0.06)" }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "62% 30%", filter: "saturate(1.25) contrast(1.06) brightness(1.02)" }}
       />
-      {/* vintage black blend: multiply veil + vignette + bottom fade + film grain */}
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#1a1f2b", mixBlendMode: "multiply", opacity: 0.3 }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 80% at 50% 40%, rgba(5,7,13,0) 45%, rgba(5,7,13,0.7) 100%)" }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(5,7,13,0.35) 0%, rgba(5,7,13,0) 22%, rgba(5,7,13,0.05) 48%, rgba(5,7,13,0.8) 66%, rgba(5,7,13,0.96) 80%, #05070D 100%)" }} />
+      {/* vivid blue blend: soft vignette + deep-blue bottom fade + brand glows + film grain */}
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 80% at 50% 40%, rgba(3,11,36,0) 50%, rgba(3,11,36,0.55) 100%)" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,11,36,0.3) 0%, rgba(3,11,36,0) 22%, rgba(3,11,36,0.05) 48%, rgba(3,11,36,0.78) 66%, rgba(3,11,36,0.95) 80%, #030B24 100%)" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(70% 34% at 0% 100%, rgba(0,84,251,0.55) 0%, rgba(0,84,251,0) 100%), radial-gradient(60% 28% at 105% 78%, rgba(47,212,236,0.38) 0%, rgba(47,212,236,0) 100%)" }} />
       <div aria-hidden className="grain" />
 
       {/* drifting sport collage, faded at the edges and into the copy below */}

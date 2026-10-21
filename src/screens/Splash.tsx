@@ -101,18 +101,19 @@ export default function Splash({ go }: { go: (r: Route) => void }) {
   }, [go, total]);
 
   return (
-    <div className="body" style={{ background: "#05070D", display: "grid", placeItems: "center", color: "#fff", overflow: "hidden" }}>
-      {/* same runners photo and vintage black blend as Welcome, kept darker so the loop leads */}
+    <div className="body" style={{ background: "#030B24", display: "grid", placeItems: "center", color: "#fff", overflow: "hidden" }}>
+      {/* same runners photo as Welcome, deep blue with a light vintage grade, kept darker so the loop leads */}
       <motion.img
         src="/img/welcome-runners.webp" alt="" aria-hidden
         onError={(e) => { const i = e.currentTarget; if (!i.src.endsWith("/img/welcome.jpg")) i.src = "/img/welcome.jpg"; }}
-        initial={{ scale: 1.2, opacity: 0 }} animate={{ scale: reduce ? 1.2 : 1.14, opacity: 0.42 }}
+        initial={{ scale: 1.2, opacity: 0 }} animate={{ scale: reduce ? 1.2 : 1.14, opacity: 0.5 }}
         transition={{ scale: { duration: total, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: 1.2, delay: reduce ? 0 : 0.1 } }}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "52% 34%", filter: "saturate(0.72) contrast(1.12) brightness(0.86) sepia(0.12)" }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "52% 34%", filter: "saturate(0.9) contrast(1.1) brightness(0.9) sepia(0.16)" }}
       />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#1a1f2b", mixBlendMode: "multiply", opacity: 0.55 }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(70% 34% at 50% 50%, rgba(5,7,13,0.72) 0%, rgba(5,7,13,0) 100%), radial-gradient(120% 80% at 50% 45%, rgba(5,7,13,0) 40%, rgba(5,7,13,0.85) 100%)" }} />
-      <div aria-hidden className="grain" />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#0A1E5C", mixBlendMode: "multiply", opacity: 0.45 }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(70% 34% at 50% 50%, rgba(3,11,36,0.7) 0%, rgba(3,11,36,0) 100%), radial-gradient(120% 80% at 50% 45%, rgba(3,11,36,0) 36%, rgba(2,6,20,0.9) 100%)" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(60% 26% at 0% 100%, rgba(0,84,251,0.32) 0%, rgba(0,84,251,0) 100%), radial-gradient(50% 22% at 100% 0%, rgba(47,212,236,0.2) 0%, rgba(47,212,236,0) 100%)" }} />
+      <div aria-hidden className="grain" style={{ opacity: 0.32 }} />
       <StatusBar onBlue />
       <div style={{ position: "relative", display: "grid", justifyItems: "center", gap: 22 }}>
         <div style={{ padding: "12px 6px" }}><SplashLogo animate={!reduce} /></div>

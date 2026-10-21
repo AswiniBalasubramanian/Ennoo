@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, MagnifyingGlass, Minus, Plus, Check, CalendarBlank, CaretRight, X } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, Ring, type Route } from "../components";
@@ -39,7 +39,14 @@ function EmptySearch({ q, onPick }: { q: string; onPick: (v: string) => void }) 
   );
 }
 
-export type Profile = { activity: string; target: number; current: number; due: string; daysLeft: number; motto: string };
+/* frosted sticky band used by the step-1 header; clear at rest so the mesh shows through */
+const band = (on: boolean): React.CSSProperties => ({
+  position: "sticky", background: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0)",
+  backdropFilter: on ? "blur(18px) saturate(1.4)" : "none", WebkitBackdropFilter: on ? "blur(18px) saturate(1.4)" : "none",
+  transition: "background .2s, box-shadow .2s",
+});
+
+export type Profile = { name: string; activity: string; target: number; current: number; due: string; daysLeft: number; motto: string };
 
 const TODAY = new Date(2026, 9, 21); // prototype "today": Wed 21 Oct 2026
 const DAY = 86400000;
@@ -50,7 +57,37 @@ const daysUntil = (d: Date) => Math.max(1, Math.round((d.getTime() - TODAY.getTi
 const presets: Record<string, number[]> = {
   km: [100, 500, 1000], workouts: [50, 100, 200], sessions: [50, 100, 200], floors: [110, 500, 1000], races: [1, 3, 5], routes: [20, 50, 100],
 };
-const presetName = ["Milestone", "Yearly", "Ambitious"];
+const presetName = ["A solid milestone", "A big year", "Go all in"];
+/* Goal ideas told in each sport's own terms, so the number means something before they commit to it */
+type Idea = { v: number; label: string };
+const ideas: Record<string, Idea[]> = {
+  run: [{ v: 100, label: "About 20 parkruns" }, { v: 500, label: "About 12 marathons" }, { v: 1000, label: "About 24 marathons" }],
+  trail: [{ v: 100, label: "About 20 parkruns" }, { v: 500, label: "About 12 marathons" }, { v: 1000, label: "About 24 marathons" }],
+  walk: [{ v: 100, label: "About 130,000 steps" }, { v: 300, label: "Chennai to Pondy and back" }, { v: 1000, label: "About 1.3 million steps" }],
+  cycle: [{ v: 200, label: "About 4 ECR coffee rides" }, { v: 1000, label: "Roughly Chennai to Goa" }, { v: 3000, label: "About 30 century rides" }],
+  swim: [{ v: 10, label: "About 400 pool lengths" }, { v: 50, label: "About 2,000 pool lengths" }, { v: 100, label: "The English Channel, three times" }],
+  stairs: [{ v: 110, label: "The Willis Tower, top to bottom" }, { v: 500, label: "About 3 Burj Khalifas" }, { v: 1000, label: "About 6 Burj Khalifas" }],
+  tri: [{ v: 1, label: "Your first finish line" }, { v: 3, label: "A full race season" }, { v: 5, label: "A race every couple of months" }],
+  yoga: [{ v: 30, label: "A 30-day streak" }, { v: 100, label: "100 mats unrolled" }, { v: 200, label: "Practice most days" }],
+  climb: [{ v: 20, label: "Fill your first logbook page" }, { v: 50, label: "Push up a grade" }, { v: 100, label: "A century of sends" }],
+  surf: [{ v: 20, label: "Paddle out most weekends" }, { v: 50, label: "Catch most of the season" }, { v: 100, label: "A century of sessions" }],
+};
+const workoutIdeas: Idea[] = [{ v: 50, label: "Once a week, all year" }, { v: 100, label: "Twice a week, all year" }, { v: 200, label: "Four a week, all year" }];
+const ideasFor = (id: string): Idea[] => {
+  const unit = byId(id).unit;
+  return ideas[id] ?? (unit === "workouts" ? workoutIdeas : presets[unit].map((v, i) => ({ v, label: presetName[i] })));
+};
+/* Goal-card backdrop: a moody photo from the sport's world (Unsplash), graded vintage in CSS */
+const goalPhoto = (id: string) => {
+  const { group } = byId(id);
+  if (["cycle", "skate"].includes(id)) return { src: "/img/goal-ride.jpg", pos: "40% 70%" };
+  if (["swim", "row", "kayak", "canoe", "paddle", "surf"].includes(id)) return { src: "/img/goal-swim.jpg", pos: "50% 50%" };
+  if (["hike", "trek", "climb", "ski", "snowboard", "yoga", "pilates", "mobility", "stretch"].includes(id)) return { src: "/img/goal-trail.jpg", pos: "70% 60%" };
+  if (group === "Strength") return { src: "/img/goal-gym.jpg", pos: "50% 50%" };
+  // motion-blurred stride, supplied by the client
+  return { src: "/img/goal-run.webp", pos: "50% 45%" };
+};
+const QUESTIONS = 4; // sport, goal, deadline, motto; the goal card follows
 const stepOf: Record<string, number> = { km: 10, workouts: 5, sessions: 5, floors: 10, races: 1, routes: 5 };
 const timeframes = [
   { label: "3 months", days: 90 },
@@ -85,8 +122,9 @@ function Option({ on, onClick, title, sub }: { on: boolean; onClick: () => void;
   );
 }
 
-export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Route) => void; onDone: (p: Profile) => void; initialStep?: number }) {
+export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: { go: (r: Route) => void; onDone: (p: Profile) => void; name?: string; initialStep?: number }) {
   const [step, setStep] = useState(initialStep);
+  const first = name.trim(); // from Signup; Google sign-up has none, so copy falls back to neutral
   const [dir, setDir] = useState(1);
   const [activity, setActivity] = useState("run");
   const [target, setTarget] = useState(500);
@@ -98,6 +136,17 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
   const searchRef = useRef<HTMLInputElement>(null);
   const search = (v: string) => { setQ(v); searchRef.current?.focus(); };
   const [group, setGroup] = useState<(typeof groups)[number]>("All");
+  const [stuck, setStuck] = useState(false);
+  // the title band is pinned on its own; search + filters pin directly beneath it, so measure it
+  const titleRef = useRef<HTMLDivElement>(null);
+  const [titleH, setTitleH] = useState(70);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setTitleH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [step]);
 
   const act = byId(activity);
   const unit = act.unit;
@@ -108,13 +157,18 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
   const list = useMemo(() => activities.filter((a) => (group === "All" || a.group === group) && a.name.toLowerCase().includes(q.trim().toLowerCase())), [q, group]);
   const sections = (["Endurance", "Strength", "Adventure"] as Group[]).map((g) => ({ g, items: list.filter((a) => a.group === g) })).filter((s) => s.items.length);
 
-  const pick = (id: string) => { setActivity(id); setTarget(presets[byId(id).unit][1]); setCurrent(0); };
+  const pick = (id: string) => { setActivity(id); setTarget(ideasFor(id)[1].v); setCurrent(0); };
   const move = (d: number) => {
     if (step + d < 0) return go("signup");
-    if (step + d > 3) return onDone({ activity, target, current, due: fmtDate(due), daysLeft: days, motto: motto.trim() });
-    setDir(d); setStep(step + d);
+    if (step + d > QUESTIONS) return onDone({ name: first, activity, target, current, due: fmtDate(due), daysLeft: days, motto: motto.trim() });
+    setDir(d); setStep(step + d); setStuck(false);
   };
-  const cta = [`Continue with ${act.name}`, "Continue", "Continue", "Start my journey"][step];
+  const cta = [`Continue with ${act.name}`, "Continue", "Continue", "Create my goal", "Start my journey"][step];
+  const share = async () => {
+    const text = `${first}'s goal on Ennoo: ${fmt(target)} ${unit} of ${act.name.toLowerCase()} by ${fmtDate(due)}.${motto.trim() ? ` "${motto.trim()}"` : ""}`;
+    try { if (navigator.share) await navigator.share({ title: "My Ennoo goal", text }); else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2200); } } catch { /* share sheet dismissed */ }
+  };
+  const [copied, setCopied] = useState(false);
 
   return (
     <div className="body" style={{ background: "var(--white)", overflow: "hidden", display: "flex", flexDirection: "column", isolation: "isolate" }}>
@@ -125,26 +179,35 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
       <StatusBar />
       <header className="pad top" style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", gap: 16, flex: "none" }}>
         <button className="icon-btn" aria-label="Back" onClick={() => move(-1)}><ArrowLeft size={20} /></button>
-        <div role="progressbar" aria-valuemin={1} aria-valuemax={4} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of 4`} style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} style={{ height: 4, borderRadius: 2, background: "#fff", boxShadow: "inset 0 0 0 1px rgba(11,18,32,0.08)", overflow: "hidden" }}>
-              <motion.span style={{ display: "block", height: "100%", background: "var(--blue)", transformOrigin: "left" }} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} />
-            </span>
-          ))}
-        </div>
-        <span className="cap num" style={{ textAlign: "right", letterSpacing: 0, color: "var(--ink)", fontWeight: 560 }}>{step + 1}/4</span>
+        {step < QUESTIONS ? (
+          <>
+            <div role="progressbar" aria-valuemin={1} aria-valuemax={QUESTIONS} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of ${QUESTIONS}`} style={{ display: "grid", gridTemplateColumns: `repeat(${QUESTIONS},1fr)`, gap: 6 }}>
+              {Array.from({ length: QUESTIONS }, (_, i) => (
+                <span key={i} style={{ height: 4, borderRadius: 2, background: "#fff", boxShadow: "inset 0 0 0 1px rgba(11,18,32,0.08)", overflow: "hidden" }}>
+                  <motion.span style={{ display: "block", height: "100%", background: "var(--blue)", transformOrigin: "left" }} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} />
+                </span>
+              ))}
+            </div>
+            <span className="cap num" style={{ textAlign: "right", letterSpacing: 0, color: "var(--ink)", fontWeight: 560 }}>{step + 1}/{QUESTIONS}</span>
+          </>
+        ) : <span style={{ gridColumn: "span 2" }} />}
       </header>
 
       <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <AnimatePresence mode="popLayout" initial={false} custom={dir}>
           <motion.div key={step} initial={{ opacity: 0, x: dir * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: dir * -40 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="body pad" style={{ paddingTop: 24, paddingBottom: 32 }}>
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="body pad" style={{ paddingTop: 24, paddingBottom: 32 }}
+            onScroll={(e) => setStuck(e.currentTarget.scrollTop > 4)}>
 
             {step === 0 && (
               <>
-                <h1 className="title">What's your primary focus?</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick your main sport. We'll shape your goal and stats around it, and you can still log all 27.</p>
-                <div style={{ position: "relative", marginTop: 20 }}>
+                {/* title and search/filters pin as two frosted bands; the intro line scrolls away between them */}
+                <div ref={titleRef} style={{ ...band(stuck), top: -24, zIndex: 3, margin: "-24px -20px 0", padding: "24px 20px 8px" }}>
+                  <h1 className="title">{first ? `${first}, what's your primary focus?` : "What's your primary focus?"}</h1>
+                </div>
+                <p className="meta" style={{ fontSize: 15, lineHeight: 1.5 }}>Pick your main sport. We'll shape your goal and stats around it, and you can still log all 27.</p>
+                <div style={{ ...band(stuck), top: titleH - 24, zIndex: 2, margin: "0 -20px", padding: "20px 20px 12px", boxShadow: stuck ? "0 1px 0 var(--line)" : "none" }}>
+                <div style={{ position: "relative" }}>
                   <MagnifyingGlass size={18} color="var(--gray)" style={{ position: "absolute", left: 16, top: 18 }} />
                   <input ref={searchRef} type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }}
                     placeholder="Search all 27 activities" aria-label="Search activities" style={{ paddingLeft: 44, paddingRight: q ? 48 : 16, background: "var(--bg)", borderColor: "transparent" }} />
@@ -165,9 +228,10 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
                     </button>
                   ))}
                 </div>
-                {sections.length ? sections.map(({ g, items }) => (
+                </div>
+                {sections.length ? sections.map(({ g, items }, si) => (
                   <section key={g}>
-                    <div className="sec" style={{ marginTop: 22 }}><h2 className="h2">{groupLabel[g]}</h2><span className="cap">{items.length} activities</span></div>
+                    <div className="sec" style={{ marginTop: si ? 22 : 10 }}><h2 className="h2">{groupLabel[g]}</h2><span className="cap">{items.length} activities</span></div>
                     <div role="radiogroup" aria-label={groupLabel[g]} style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
                       {items.map(({ id, name, Icon }) => {
                         const on = id === activity;
@@ -189,11 +253,24 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
 
             {step === 1 && (
               <>
-                <h1 className="title">What's your target goal?</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Choose a popular milestone or set your own number.</p>
-                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Popular targets</h2></div>
-                <div role="radiogroup" aria-label="Popular targets" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                  {presets[unit].map((p, i) => <Option key={p} on={target === p} onClick={() => setTarget(p)} title={fmt(p)} sub={`${unit}, ${presetName[i].toLowerCase()}`} />)}
+                <h1 className="title">What's your {act.name.toLowerCase()} goal?</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick a popular {act.name.toLowerCase()} challenge or set your own number.</p>
+                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Popular challenges</h2></div>
+                <div role="radiogroup" aria-label={`Popular ${act.name.toLowerCase()} challenges`} style={{ display: "grid", gap: 8 }}>
+                  {ideasFor(activity).map((it) => {
+                    const on = target === it.v;
+                    return (
+                      <button key={it.v} role="radio" aria-checked={on} onClick={() => { setTarget(it.v); if (current >= it.v) setCurrent(0); }}
+                        style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: "12px 16px 12px 12px", borderRadius: 18, border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
+                        <span style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: on ? "#fff" : "var(--bg)" }}><SportIcon Icon={act.Icon} size={22} selected={on} /></span>
+                        <span style={{ flex: 1 }}>
+                          <span className="num" style={{ display: "block", fontSize: 17, fontWeight: 600, letterSpacing: 0, color: on ? "var(--blue)" : "var(--ink)" }}>{fmt(it.v)} {unit}</span>
+                          <span className="cap">{it.label}</span>
+                        </span>
+                        <span style={{ width: 22, height: 22, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", background: on ? "var(--blue)" : "transparent", border: on ? "none" : "1.5px solid var(--gray-2)", color: "#fff" }}>{on && <Check size={12} weight="bold" />}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
                   <Stepper label="Your target" help={`${act.name}, in ${unit}`} value={target} unit={unit} step={stepOf[unit]} min={stepOf[unit]} onChange={(v) => { setTarget(v); if (current >= v) setCurrent(0); }} />
@@ -241,7 +318,7 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
 
             {step === 3 && (
               <>
-                <h1 className="title">Your personal motto</h1>
+                <h1 className="title">{first ? `What keeps you going, ${first}?` : "Your personal motto"}</h1>
                 <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>What words keep you moving when motivation fades? It sits on your home screen.</p>
                 <div className="field" style={{ marginTop: 22 }}>
                   <label htmlFor="motto">In your own words</label>
@@ -261,6 +338,54 @@ export default function Onboarding({ go, onDone, initialStep = 0 }: { go: (r: Ro
                     );
                   })}
                 </div>
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                <h1 className="title">Here's your goal{first ? `, ${first}` : ""}</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>It lives at the top of your home screen. Every session you log fills the ring.</p>
+                {/* the payoff: everything they chose, set as one card */}
+                <motion.div initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
+                  style={{ marginTop: 22, borderRadius: 28, padding: "22px 22px 24px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
+                    background: "#061026", boxShadow: "0 28px 50px -24px rgba(3,11,36,0.75)" }}>
+                  {/* vintage, moody grade: faded film colour, navy wash, heavy vignette, grain */}
+                  <img src={goalPhoto(activity).src} alt="" aria-hidden
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: goalPhoto(activity).pos, zIndex: -1,
+                      filter: "saturate(0.9) sepia(0.14) contrast(1.08) brightness(0.85)" }} />
+                  <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, background: "#0A1E5C", mixBlendMode: "multiply", opacity: 0.22 }} />
+                  <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1,
+                    background: "linear-gradient(180deg, rgba(4,8,20,0.6) 0%, rgba(4,8,20,0.15) 34%, rgba(4,8,20,0.25) 60%, rgba(4,8,20,0.85) 100%), radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(2,4,12,0.7) 100%)" }} />
+                  <div aria-hidden className="grain" style={{ opacity: 0.35, zIndex: -1 }} />
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.16)", display: "grid", placeItems: "center" }}><act.Icon size={20} weight="fill" /></span>
+                    <span style={{ fontSize: 14, fontWeight: 560 }}>{first ? `${first}'s` : "Your"} {act.name.toLowerCase()} goal</span>
+                  </div>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 18 }}>
+                    <p style={{ fontFamily: "var(--serif)", fontSize: 56, lineHeight: 0.95 }}>
+                      <span className="num">{fmt(target)}</span> <span style={{ fontSize: 26, fontStyle: "italic" }}>{unit}</span>
+                    </p>
+                    <div style={{ position: "relative", display: "grid", placeItems: "center", flex: "none" }}>
+                      <Ring p={current / target} size={76} stroke={7} id="ob-card-ring" />
+                      <span className="num" style={{ position: "absolute", fontSize: 15, fontWeight: 600 }}>{Math.round((current / target) * 100)}%</span>
+                    </div>
+                  </div>
+                  <p style={{ position: "relative", marginTop: 8, fontSize: 15, color: "rgba(255,255,255,0.82)" }}>by {fmtDate(due)}</p>
+                  <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
+                    {[[`${days}`, "days to go"], [`${fmt(round(perWeek))} ${unit}`, "a week to get there"]].map(([v, l]) => (
+                      <div key={l} style={{ borderRadius: 16, padding: "12px 14px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
+                        <p className="num" style={{ fontSize: 18, fontWeight: 600, letterSpacing: 0 }}>{v}</p>
+                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {motto.trim() && (
+                    <p style={{ position: "relative", marginTop: 18, paddingLeft: 12, borderLeft: "2px solid #2FD4EC", fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 20, lineHeight: 1.25 }}>"{motto.trim()}"</p>
+                  )}
+                </motion.div>
+                <button type="button" className="btn" onClick={share} style={{ width: "100%", marginTop: 12, color: "var(--blue)", fontWeight: 560 }} aria-live="polite">
+                  {copied ? "Copied to clipboard" : "Share my goal"}
+                </button>
               </>
             )}
           </motion.div>

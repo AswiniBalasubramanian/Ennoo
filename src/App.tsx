@@ -19,7 +19,7 @@ const screens: { id: Route; name: string; note: string }[] = [
   { id: "welcome", name: "Welcome", note: "First open" },
   { id: "login", name: "Log in", note: "Returning member" },
   { id: "signup", name: "Create account", note: "Sign up" },
-  { id: "onboarding", name: "Onboarding", note: "4 steps" },
+  { id: "onboarding", name: "Onboarding", note: "4 steps + goal card" },
   { id: "pro", name: "Ennoo Pro", note: "Plans and trial" },
   { id: "home", name: "Home", note: "Goal and week" },
   { id: "search", name: "Search", note: "Find anything" },
@@ -40,6 +40,7 @@ export default function App() {
   });
   const [route, setRoute] = useState<Route>("splash");
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [firstName, setFirstName] = useState("");
   const go = useCallback((r: Route) => { setRoute(r); history.replaceState(null, "", `#${r}`); }, []);
   const [handedOff, setHandedOff] = useState(false);
   const leaveSplash = useCallback((r: Route) => {
@@ -52,8 +53,8 @@ export default function App() {
     splash: <Splash go={leaveSplash} />,
     welcome: <Welcome go={go} />,
     login: <Login go={go} />,
-    signup: <Signup go={go} />,
-    onboarding: <Onboarding go={go} initialStep={obStep} onDone={(p) => { setProfile(p); go("pro"); }} />,
+    signup: <Signup go={go} onName={setFirstName} />,
+    onboarding: <Onboarding go={go} name={firstName} initialStep={obStep} onDone={(p) => { setProfile(p); go("pro"); }} />,
     pro: <Pro go={go} />,
     home: <Home go={go} profile={profile} />,
     search: <Search go={go} />,

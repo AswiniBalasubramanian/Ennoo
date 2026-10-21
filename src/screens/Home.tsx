@@ -57,7 +57,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         </header>
 
         <motion.div className="pad" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ marginTop: 26 }}>
-          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>{fresh ? "Welcome, Kavya" : `Morning, ${athlete.first}`}</p>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>{fresh ? `Welcome, ${profile.name || athlete.first}` : `Morning, ${athlete.first}`}</p>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
             <h1 className="title" style={{ fontSize: 26, color: "#fff" }}>{g.title}</h1>
             <button className="icon-btn on-blue" aria-label="Edit goal" style={{ width: 38, height: 38 }}><PencilSimple size={17} /></button>

@@ -5,7 +5,7 @@ import { StatusBar, GoogleG, AuthHeader, type Route } from "../components";
 
 type Errors = Partial<Record<"name" | "email" | "password", string>>;
 
-export default function Signup({ go }: { go: (r: Route) => void }) {
+export default function Signup({ go, onName }: { go: (r: Route) => void; onName: (name: string) => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +22,7 @@ export default function Signup({ go }: { go: (r: Route) => void }) {
     setErrors(next);
     if (Object.keys(next).length) return;
     setBusy(true);
+    onName(name.trim().split(/\s+/)[0]);
     setTimeout(() => go("onboarding"), 700);
   };
 
