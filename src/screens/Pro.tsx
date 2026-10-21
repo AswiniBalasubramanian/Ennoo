@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { motion } from "motion/react";
-import { ArrowLeft, Diamond, Target, Trophy, Barbell, ChartLineUp, ShieldCheck, Gift, CreditCard, ArrowsClockwise } from "@phosphor-icons/react";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowLeft, Target, Trophy, Barbell, ChartLineUp, ShieldCheck, Gift, CreditCard, ArrowsClockwise } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, type Route } from "../components";
 
 // Prices from the shipped app. Per-month figures are recalculated (499 / 12 = 41.58).
@@ -18,6 +18,38 @@ const features = [
   { I: ShieldCheck, t: "Ad-free, with cloud sync", d: "Every workout backed up securely on all your devices." },
 ];
 
+/* Pro mark: the Ennoo loop as a 3D object in the brand blue-to-cyan gradient, on a soft halo, with one light sweep on arrival */
+const MASK = "url(/img/pro-mark.svg) center / contain no-repeat";
+const BRAND = "linear-gradient(90deg, #0054FB 0%, #1F8BFF 45%, #2FD4EC 100%)";
+const Loop = ({ w, h, style }: { w: number; h: number; style?: React.CSSProperties }) => (
+  <span aria-hidden style={{ display: "block", width: w, height: h, background: BRAND, WebkitMask: MASK, mask: MASK, ...style }} />
+);
+function ProMark() {
+  const reduce = useReducedMotion();
+  const W = 140, H = 52;
+  return (
+    <motion.div initial={{ opacity: 0, y: 10, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      style={{ position: "relative", width: W, height: H, margin: "10px auto 8px" }}>
+      <div aria-hidden style={{ position: "absolute", inset: "-38px -52px", background: "radial-gradient(50% 50% at 50% 55%, rgba(47,212,236,0.06), rgba(0,84,251,0) 60%)" }} />
+      <div aria-hidden style={{ position: "absolute", left: "16%", right: "16%", bottom: -12, height: 10, borderRadius: "50%", background: "rgba(0,40,140,0.12)", filter: "blur(7px)" }} />
+      {/* the object: brand gradient body, the 3D file's bevel shading blended over it, a specular top light; isolated so blends stay inside */}
+      <div style={{ position: "relative", width: W, height: H, isolation: "isolate",
+        filter: "drop-shadow(0 1px 0.5px rgba(0,26,107,0.45)) drop-shadow(0 6px 10px rgba(0,64,208,0.16))" }}>
+        <Loop w={W} h={H} style={{ position: "absolute", inset: 0, background: "linear-gradient(95deg, #003FD0 0%, #0A63FF 38%, #1FA2FF 68%, #3BDDF2 100%)" }} />
+        <img src="/img/pro-mark-3d.svg" alt="" aria-hidden width={W} height={H}
+          style={{ position: "absolute", inset: 0, display: "block", mixBlendMode: "overlay", filter: "grayscale(1) contrast(1.5) brightness(1.12)", opacity: 0.95 }} />
+        <span aria-hidden style={{ position: "absolute", inset: 0, WebkitMask: MASK, mask: MASK, mixBlendMode: "soft-light",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.15) 38%, rgba(0,0,0,0) 55%, rgba(0,10,60,0.35) 100%)" }} />
+        {!reduce && (
+          <motion.span aria-hidden initial={{ backgroundPositionX: "160%" }} animate={{ backgroundPositionX: "-60%" }} transition={{ delay: 0.6, duration: 1.5, ease: [0.45, 0, 0.2, 1] }}
+            style={{ position: "absolute", inset: 0, WebkitMask: MASK, mask: MASK, mixBlendMode: "soft-light",
+              backgroundImage: "linear-gradient(105deg, transparent 38%, rgba(255,255,255,1) 50%, transparent 62%)", backgroundSize: "250% 100%", backgroundRepeat: "no-repeat" }} />
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Pro({ go }: { go: (r: Route) => void }) {
   const [plan, setPlan] = useState<(typeof plans)[number]["id"]>("annual");
   const p = plans.find((x) => x.id === plan)!;
@@ -27,36 +59,21 @@ export default function Pro({ go }: { go: (r: Route) => void }) {
       <StatusBar />
       <header className="pad top" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", flex: "none" }}>
         <button className="icon-btn" aria-label="Back" onClick={() => go("onboarding")}><ArrowLeft size={20} /></button>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 999, background: "var(--blue-50)", color: "var(--blue)", fontSize: 13, fontWeight: 600 }}>
-          <Diamond size={15} weight="fill" />Ennoo Pro
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 30, padding: "0 12px", borderRadius: 999, background: "var(--blue-50)", boxShadow: "inset 0 0 0 1px var(--blue-100)", color: "var(--blue)", fontSize: 13, fontWeight: 600 }}>
+          <Loop w={22} h={8} />Ennoo Pro
         </span>
-        <button onClick={() => go("home")} style={{ justifySelf: "end", fontSize: 14, fontWeight: 560, color: "var(--gray)", padding: "10px 4px" }}>Not now</button>
+        <button onClick={() => go("home")} style={{ justifySelf: "end", fontSize: 14, fontWeight: 560, color: "var(--gray)", padding: "10px 4px", whiteSpace: "nowrap" }}>Skip for now</button>
       </header>
 
       <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
         <div className="pad" style={{ paddingTop: 22, paddingBottom: 24 }}>
-          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            style={{ width: 72, height: 72, borderRadius: 24, margin: "0 auto", display: "grid", placeItems: "center", background: "linear-gradient(160deg, #1a66ff, #0041d6)", color: "#fff", boxShadow: "0 12px 28px -12px rgba(0,84,251,0.7)" }}>
-            <Diamond size={36} weight="duotone" />
-          </motion.div>
+          <ProMark />
           <h1 className="title" style={{ textAlign: "center", marginTop: 18 }}>Unlock your full potential</h1>
           <p className="meta" style={{ textAlign: "center", fontSize: 15, lineHeight: 1.5, marginTop: 8, maxWidth: "32ch", marginInline: "auto" }}>
             Reach your milestones faster with advanced tracking, all 27 sports and all-time personal bests.
           </p>
 
-          <div className="card" style={{ marginTop: 22, padding: "6px 18px" }}>
-            {features.map(({ I, t, d }, i) => (
-              <div key={t} style={{ display: "flex", gap: 14, padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={I} size={21} /></span>
-                <span>
-                  <span style={{ display: "block", fontSize: 15, fontWeight: 600 }}>{t}</span>
-                  <span className="cap" style={{ fontSize: 13, lineHeight: 1.45 }}>{d}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="sec"><h2 className="h2">Choose your plan</h2><span className="cap">All Pro features</span></div>
+          <div className="sec" style={{ marginTop: 22 }}><h2 className="h2">Choose your plan</h2><span className="cap">All Pro features</span></div>
           <div role="radiogroup" aria-label="Plans" style={{ display: "grid", gap: 10 }}>
             {plans.map((x) => {
               const on = x.id === plan;
@@ -84,6 +101,20 @@ export default function Pro({ go }: { go: (r: Route) => void }) {
                 </button>
               );
             })}
+          </div>
+
+          {/* what every plan includes, right after the prices */}
+          <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Everything in Pro</h2></div>
+          <div className="card" style={{ padding: "6px 18px" }}>
+            {features.map(({ I, t, d }, i) => (
+              <div key={t} style={{ display: "flex", gap: 14, padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={I} size={21} /></span>
+                <span>
+                  <span style={{ display: "block", fontSize: 15, fontWeight: 600 }}>{t}</span>
+                  <span className="cap" style={{ fontSize: 13, lineHeight: 1.45 }}>{d}</span>
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className="card" style={{ marginTop: 14, padding: "12px 10px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", textAlign: "center" }}>

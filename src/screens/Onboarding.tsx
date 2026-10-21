@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, MagnifyingGlass, Minus, Plus, Check, CalendarBlank, CaretRight, X } from "@phosphor-icons/react";
-import { StatusBar, SportIcon, Ring, type Route } from "../components";
+import { ArrowLeft, ArrowRight, MagnifyingGlass, Minus, Plus, Check, CalendarBlank, CaretRight, CaretLeft, X, ImageSquare, ShareFat } from "@phosphor-icons/react";
+import { StatusBar, SportIcon, Wordmark, type Route } from "../components";
 import { activities, byId, mottos, groupLabel, type Group } from "../data";
 
 /* Empty search: a lens over an empty lane, with one-tap suggestions so the user is never stuck. */
@@ -46,6 +46,160 @@ const band = (on: boolean): React.CSSProperties => ({
   transition: "background .2s, box-shadow .2s",
 });
 
+/* Story-card timeline: a dotted route from today to the deadline, with quarter milestones as stops */
+const fmtShort = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const ROUTE = [[34, 270], [158, 246], [72, 172], [204, 126], [232, 34]] as const;
+function GoalRoute({ days, current, target, unit }: { days: number; current: number; target: number; unit: string }) {
+  const d = "M" + ROUTE.map(([x, y]) => `${x} ${y}`).join(" L");
+  const stop = (i: number) => ({ date: fmtShort(addDays(Math.round((days * i) / 4))), val: `${fmt(Math.round(current + ((target - current) * i) / 4))} ${unit}` });
+  // label anchors per stop: [dx, dy, text-anchor]
+  const lab: [number, number, "start" | "end"][] = [[-10, 32, "start"], [12, 14, "start"], [-14, 4, "end"], [14, 12, "start"], [-14, 2, "end"]];
+  return (
+    <svg viewBox="0 0 260 296" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden style={{ overflow: "visible", display: "block" }}>
+      <defs>
+        <mask id="route-reveal"><motion.path d={d} fill="none" stroke="#fff" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.5, duration: 1.6, ease: [0.65, 0, 0.35, 1] }} /></mask>
+        <radialGradient id="goal-glow"><stop offset="0" stopColor="#1F6BFF" stopOpacity="0.85" /><stop offset="1" stopColor="#1F6BFF" stopOpacity="0" /></radialGradient>
+        {/* 3D flag: brushed pole, waving cloth with a lit face and a shaded fold, glossy finial */}
+        <linearGradient id="pole-g" x1="0" x2="1"><stop offset="0" stopColor="#8A97AD" /><stop offset="0.45" stopColor="#FFFFFF" /><stop offset="1" stopColor="#6B7890" /></linearGradient>
+        <linearGradient id="flag-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2FD4EC" /><stop offset="0.5" stopColor="#1F7BFF" /><stop offset="1" stopColor="#0040D0" /></linearGradient>
+        <linearGradient id="fold-g" x1="0" x2="1"><stop offset="0" stopColor="#001A6B" stopOpacity="0" /><stop offset="0.5" stopColor="#001A6B" stopOpacity="0.45" /><stop offset="1" stopColor="#001A6B" stopOpacity="0" /></linearGradient>
+        <radialGradient id="knob-g" cx="0.35" cy="0.3"><stop offset="0" stopColor="#E8FDFF" /><stop offset="0.5" stopColor="#38D4EC" /><stop offset="1" stopColor="#0054FB" /></radialGradient>
+        {/* 3D avatar: glossy sphere with a lit bust */}
+        <radialGradient id="ava-g" cx="0.35" cy="0.28" r="0.8"><stop offset="0" stopColor="#7FC2FF" /><stop offset="0.55" stopColor="#1F6BFF" /><stop offset="1" stopColor="#002C9E" /></radialGradient>
+        <linearGradient id="bust-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset="1" stopColor="#CFE0FF" /></linearGradient>
+        <clipPath id="ava-clip"><circle cx={ROUTE[0][0]} cy={ROUTE[0][1]} r="11" /></clipPath>
+        <filter id="lift" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.2" floodColor="#000814" floodOpacity="0.55" /></filter>
+      </defs>
+      <path d={d} fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeDasharray="0 7" mask="url(#route-reveal)" />
+      {ROUTE.map(([x, y], i) => {
+        const s = stop(i), [dx, dy, anchor] = lab[i], end = i === ROUTE.length - 1, start = i === 0;
+        return (
+          <motion.g key={i} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 + i * 0.36, duration: 0.35 }} style={{ transformOrigin: `${x}px ${y}px` }}>
+            {end && <circle cx={x} cy={y} r="22" fill="url(#goal-glow)" />}
+            {start && <motion.circle cx={x} cy={y} r="12" fill="none" stroke="#3D8BFF" strokeWidth="2" animate={{ r: [12, 20], opacity: [0.9, 0] }} transition={{ duration: 1.6, repeat: Infinity }} />}
+            {start ? (
+              <g filter="url(#lift)">
+                <circle cx={x} cy={y} r="11" fill="url(#ava-g)" />
+                <g clipPath="url(#ava-clip)">
+                  <circle cx={x} cy={y - 2.6} r="3.9" fill="url(#bust-g)" />
+                  <ellipse cx={x} cy={y + 8.6} rx="7.6" ry="5.6" fill="url(#bust-g)" />
+                </g>
+                <ellipse cx={x - 4} cy={y - 6} rx="4" ry="2.2" fill="#fff" opacity="0.45" transform={`rotate(-30 ${x - 4} ${y - 6})`} />
+                <circle cx={x} cy={y} r="11" fill="none" stroke="#fff" strokeWidth="2" />
+              </g>
+            ) : end ? (
+              <g filter="url(#lift)">
+                <ellipse cx={x} cy={y + 1} rx="6" ry="2.2" fill="#001A6B" opacity="0.5" />
+                <rect x={x - 1.3} y={y - 34} width="2.6" height="35" rx="1.3" fill="url(#pole-g)" />
+                <path d={`M${x + 1} ${y - 33} C${x + 8} ${y - 37} ${x + 14} ${y - 29} ${x + 25} ${y - 32} L${x + 25} ${y - 17} C${x + 14} ${y - 14} ${x + 8} ${y - 22} ${x + 1} ${y - 18} Z`} fill="url(#flag-g)" />
+                <path d={`M${x + 7} ${y - 34.2} C${x + 10} ${y - 33} ${x + 12} ${y - 31} ${x + 14} ${y - 30.6} L${x + 14} ${y - 15.6} C${x + 12} ${y - 16} ${x + 10} ${y - 18} ${x + 7} ${y - 19.6} Z`} fill="url(#fold-g)" />
+                <path d={`M${x + 1} ${y - 33} C${x + 8} ${y - 37} ${x + 14} ${y - 29} ${x + 25} ${y - 32}`} fill="none" stroke="#fff" strokeOpacity="0.55" strokeWidth="1" />
+                <circle cx={x} cy={y - 35.5} r="2.6" fill="url(#knob-g)" />
+              </g>
+            ) : (
+              <circle cx={x} cy={y} r="6" fill="#fff" />
+            )}
+            <text x={x + dx} y={y + dy - 6} textAnchor={anchor} fill="#fff" fontSize="12" fontWeight="600" fontFamily="Inter, system-ui">{start ? "Today" : end ? `Goal, ${s.date}` : s.date}</text>
+            <text x={x + dx} y={y + dy + 8} textAnchor={anchor} fill="rgba(255,255,255,0.72)" fontSize="11" fontFamily="Inter, system-ui">{s.val}</text>
+          </motion.g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* Bottom sheet for typing a number on the phone keyboard */
+function NumberSheet({ title, help, unit, value, min, max, onSave, onClose }: { title: string; help: string; unit: string; value: number; min: number; max?: number; onSave: (v: number) => void; onClose: () => void }) {
+  const [text, setText] = useState(String(value));
+  const n = Number(text);
+  const err = text === "" ? "Enter a number" : !Number.isFinite(n) ? "Numbers only" : n < min ? `At least ${fmt(min)} ${unit}` : max !== undefined && n > max ? `At most ${fmt(max)} ${unit}` : "";
+  const save = () => { if (!err) { onSave(Math.round(n)); onClose(); } };
+  // focus without letting the browser scroll the (overflow: hidden) screen to reveal the field
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { const t = setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); inputRef.current?.select(); }, 60); return () => clearTimeout(t); }, []);
+  return (
+    <motion.div key="sheet" initial={{ opacity: 1 }} exit={{ opacity: 1 }} transition={{ duration: 0.3 }}
+      style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "flex-end" }}>
+      <motion.div aria-hidden onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+        style={{ position: "absolute", inset: 0, background: "rgba(11,18,32,0.42)" }} />
+      <motion.form role="dialog" aria-modal="true" aria-labelledby="sheet-title" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); save(); }}
+        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 420, damping: 40 }}
+        style={{ position: "relative", width: "100%", background: "#fff", borderRadius: "24px 24px 0 0", padding: "10px 20px 28px", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)" }}>
+        <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 16px" }} />
+        <h2 id="sheet-title" className="h2" style={{ fontSize: 18 }}>{title}</h2>
+        <p className="cap" style={{ marginTop: 4 }}>{help}</p>
+        <label style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 18, padding: "10px 16px", borderRadius: 16, border: `1.5px solid ${err && text !== "" ? "var(--red, #E5484D)" : "var(--blue)"}`, background: "var(--blue-50)" }}>
+          <input ref={inputRef} inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" aria-label={title} aria-invalid={!!err} aria-describedby="sheet-err"
+            value={text} onChange={(e) => setText(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+            className="num" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: 34, fontWeight: 600, color: "var(--ink)", letterSpacing: 0 }} />
+          <span style={{ fontSize: 16, fontWeight: 500, color: "var(--gray)" }}>{unit}</span>
+        </label>
+        <p id="sheet-err" role="alert" className="cap" style={{ minHeight: 18, marginTop: 6, color: err && text !== "" ? "#C9363B" : "var(--gray)" }}>{err && text !== "" ? err : " "}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 8 }}>
+          <button type="button" className="btn btn-soft" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-blue" disabled={!!err} style={{ opacity: err ? 0.5 : 1 }}>Save</button>
+        </div>
+      </motion.form>
+    </motion.div>
+  );
+}
+
+/* Bottom sheet calendar for an exact deadline: month grid, past days disabled, live day count */
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+function DateSheet({ value, onSave, onClose }: { value: Date; onSave: (d: Date) => void; onClose: () => void }) {
+  const first = addDays(1);
+  const [sel, setSel] = useState(value < first ? first : value);
+  const [month, setMonth] = useState(new Date(sel.getFullYear(), sel.getMonth(), 1));
+  const lead = (month.getDay() + 6) % 7; // weeks start on Monday
+  const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = [...Array(lead).fill(null), ...Array.from({ length: count }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
+  const canPrev = month > new Date(first.getFullYear(), first.getMonth(), 1);
+  const shift = (n: number) => setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1));
+  return (
+    <motion.div key="date-sheet" initial={{ opacity: 1 }} exit={{ opacity: 1 }} transition={{ duration: 0.3 }}
+      style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "flex-end" }}>
+      <motion.div aria-hidden onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+        style={{ position: "absolute", inset: 0, background: "rgba(11,18,32,0.42)" }} />
+      <motion.div role="dialog" aria-modal="true" aria-labelledby="date-title" onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 420, damping: 40 }}
+        style={{ position: "relative", width: "100%", background: "#fff", borderRadius: "24px 24px 0 0", padding: "10px 20px 28px", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)" }}>
+        <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 16px" }} />
+        <h2 id="date-title" className="h2" style={{ fontSize: 18 }}>Pick your deadline</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+          <button type="button" className="icon-btn" aria-label="Previous month" onClick={() => shift(-1)} disabled={!canPrev} style={{ opacity: canPrev ? 1 : 0.35 }}><CaretLeft size={18} weight="bold" /></button>
+          <span aria-live="polite" style={{ fontSize: 16, fontWeight: 600 }}>{month.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</span>
+          <button type="button" className="icon-btn" aria-label="Next month" onClick={() => shift(1)}><CaretRight size={18} weight="bold" /></button>
+        </div>
+        <div role="grid" aria-label="Calendar" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4, marginTop: 12, textAlign: "center" }}>
+          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="cap" style={{ fontSize: 12, fontWeight: 600, paddingBottom: 6 }}>{d}</span>)}
+          {cells.map((d, i) => {
+            if (!d) return <span key={`e${i}`} />;
+            const off = d < first, on = sameDay(d, sel), today = sameDay(d, TODAY);
+            return (
+              <button key={i} type="button" disabled={off} aria-pressed={on} aria-label={fmtDate(d)} onClick={() => setSel(d)}
+                className="num" style={{ justifySelf: "center", width: 40, height: 40, borderRadius: "50%", fontSize: 15, fontWeight: on ? 600 : 500, letterSpacing: 0,
+                  background: on ? "var(--blue)" : "transparent", color: on ? "#fff" : off ? "var(--gray-2)" : "var(--ink)",
+                  boxShadow: today && !on ? "inset 0 0 0 1.5px var(--blue-100)" : "none", cursor: off ? "default" : "pointer", transition: "background .15s" }}>
+                {d.getDate()}
+              </button>
+            );
+          })}
+        </div>
+        <p className="cap" aria-live="polite" style={{ marginTop: 12, textAlign: "center", fontSize: 14 }}>
+          <strong style={{ color: "var(--ink)" }}>{fmtDate(sel)}</strong>, {daysUntil(sel)} days from today
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 14 }}>
+          <button type="button" className="btn btn-soft" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-blue" onClick={() => { onSave(sel); onClose(); }}>Set deadline</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export type Profile = { name: string; activity: string; target: number; current: number; due: string; daysLeft: number; motto: string };
 
 const TODAY = new Date(2026, 9, 21); // prototype "today": Wed 21 Oct 2026
@@ -89,21 +243,39 @@ const goalPhoto = (id: string) => {
 };
 const QUESTIONS = 4; // sport, goal, deadline, motto; the goal card follows
 const stepOf: Record<string, number> = { km: 10, workouts: 5, sessions: 5, floors: 10, races: 1, routes: 5 };
+// the Ennoo mark (from the brand file) as a hairline outline, tiled
+const LOOP_PATTERN = "url(/img/loop-pattern.svg)";
 const timeframes = [
   { label: "3 months", days: 90 },
   { label: "6 months", days: 180 },
   { label: "End of year", days: daysUntil(new Date(2026, 11, 31)) },
-  { label: "1 full year", days: 365 },
+  { label: "1 year", days: 365 },
 ];
+/* Turn a weekly total into the sessions people actually plan in */
+const sessionNoun: Record<string, string> = { run: "runs", trail: "runs", walk: "walks", hike: "hikes", trek: "treks", cycle: "rides", swim: "swims", row: "rows", kayak: "paddles", canoe: "paddles", paddle: "paddles", ski: "ski days", skate: "skates" };
+function planLine(id: string, unit: string, perWeek: number, days: number, left: number) {
+  const r1 = (n: number) => (n >= 10 ? Math.round(n) : Math.round(n * 10) / 10);
+  if (unit === "km") {
+    const n = perWeek > 12 ? 3 : 2;
+    return `That's ${n} ${sessionNoun[id] ?? "sessions"} a week of about ${fmt(r1(perWeek / n))} km.`;
+  }
+  if (unit === "races") { const gap = Math.max(1, Math.round(days / 7 / Math.max(1, left))); return `That's one race every ${gap} week${gap > 1 ? "s" : ""}.`; }
+  if (perWeek < 1) { const gap = Math.max(2, Math.round(1 / perWeek)); return `That's about one ${unit.replace(/s$/, "")} every ${gap} weeks.`; }
+  return `That's about ${fmt(Math.round(perWeek))} ${unit} a week.`;
+}
 const groups: ("All" | Group)[] = ["All", "Endurance", "Strength", "Adventure"];
 const fmt = (n: number) => n.toLocaleString("en-IN");
 
-function Stepper({ label, help, value, unit, step, min, onChange }: { label: string; help: string; value: number; unit: string; step: number; min: number; onChange: (v: number) => void }) {
+function Stepper({ label, help, value, unit, step, min, onChange, onEdit }: { label: string; help: string; value: number; unit: string; step: number; min: number; onChange: (v: number) => void; onEdit: () => void }) {
   return (
     <div className="card" style={{ padding: "16px 16px 16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ flex: 1 }}>
         <p className="cap">{label}</p>
-        <p className="num" style={{ fontSize: 24, fontWeight: 600, marginTop: 2 }} aria-live="polite">{fmt(value)} <span style={{ fontSize: 14, fontWeight: 500, color: "var(--gray)", letterSpacing: 0 }}>{unit}</span></p>
+        {/* tap the number to type it instead of stepping */}
+        <button type="button" onClick={onEdit} aria-label={`${label}: ${fmt(value)} ${unit}. Tap to type a number`} className="num"
+          style={{ display: "inline-flex", alignItems: "baseline", gap: 4, fontSize: 24, fontWeight: 600, marginTop: 2, padding: "0 0 2px", borderBottom: "1.5px dashed var(--blue-100)", textAlign: "left" }} aria-live="polite">
+          {fmt(value)} <span style={{ fontSize: 14, fontWeight: 500, color: "var(--gray)", letterSpacing: 0 }}>{unit}</span>
+        </button>
         <p className="cap" style={{ marginTop: 2 }}>{help}</p>
       </div>
       <button className="icon-btn" aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => onChange(Math.max(min, value - step))} disabled={value <= min} style={{ opacity: value <= min ? 0.4 : 1 }}><Minus size={18} weight="bold" /></button>
@@ -169,6 +341,12 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     try { if (navigator.share) await navigator.share({ title: "My Ennoo goal", text }); else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2200); } } catch { /* share sheet dismissed */ }
   };
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState<null | "target" | "current">(null);
+  const [pickingDate, setPickingDate] = useState(false);
+  // their own photo for the story card; kept as an object URL, released when replaced or on unmount
+  const [photo, setPhoto] = useState<string | null>(null);
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo); }, [photo]);
+  const pickPhoto = (f?: File) => { if (f && f.type.startsWith("image/")) setPhoto(URL.createObjectURL(f)); };
 
   return (
     <div className="body" style={{ background: "var(--white)", overflow: "hidden", display: "flex", flexDirection: "column", isolation: "isolate" }}>
@@ -181,7 +359,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
         <button className="icon-btn" aria-label="Back" onClick={() => move(-1)}><ArrowLeft size={20} /></button>
         {step < QUESTIONS ? (
           <>
-            <div role="progressbar" aria-valuemin={1} aria-valuemax={QUESTIONS} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of ${QUESTIONS}`} style={{ display: "grid", gridTemplateColumns: `repeat(${QUESTIONS},1fr)`, gap: 6 }}>
+            <div role="progressbar" aria-valuemin={1} aria-valuemax={QUESTIONS} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of ${QUESTIONS}`} style={{ display: "grid", gridTemplateColumns: `repeat(${QUESTIONS},1fr)`, gap: 5, width: 132, justifySelf: "center" }}>
               {Array.from({ length: QUESTIONS }, (_, i) => (
                 <span key={i} style={{ height: 4, borderRadius: 2, background: "#fff", boxShadow: "inset 0 0 0 1px rgba(11,18,32,0.08)", overflow: "hidden" }}>
                   <motion.span style={{ display: "block", height: "100%", background: "var(--blue)", transformOrigin: "left" }} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} />
@@ -255,64 +433,68 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
               <>
                 <h1 className="title">What's your {act.name.toLowerCase()} goal?</h1>
                 <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick a popular {act.name.toLowerCase()} challenge or set your own number.</p>
-                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Popular challenges</h2></div>
-                <div role="radiogroup" aria-label={`Popular ${act.name.toLowerCase()} challenges`} style={{ display: "grid", gap: 8 }}>
+                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Popular challenges</h2><span className="cap">Swipe for more</span></div>
+                {/* challenge cards: sport, name, what it takes, set as goal. Edge to edge, snapping, the next card peeks */}
+                <div role="radiogroup" aria-label={`Popular ${act.name.toLowerCase()} challenges`}
+                  style={{ display: "flex", gap: 12, overflowX: "auto", margin: "0 -20px", padding: "2px 20px 8px", scrollSnapType: "x mandatory", scrollPaddingInline: 20, scrollbarWidth: "none" }}>
                   {ideasFor(activity).map((it) => {
                     const on = target === it.v;
                     return (
-                      <button key={it.v} role="radio" aria-checked={on} onClick={() => { setTarget(it.v); if (current >= it.v) setCurrent(0); }}
-                        style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: "12px 16px 12px 12px", borderRadius: 18, border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
-                        <span style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: on ? "#fff" : "var(--bg)" }}><SportIcon Icon={act.Icon} size={22} selected={on} /></span>
-                        <span style={{ flex: 1 }}>
-                          <span className="num" style={{ display: "block", fontSize: 17, fontWeight: 600, letterSpacing: 0, color: on ? "var(--blue)" : "var(--ink)" }}>{fmt(it.v)} {unit}</span>
-                          <span className="cap">{it.label}</span>
+                      <button key={it.v} role="radio" aria-checked={on} onClick={(e) => { setTarget(it.v); if (current >= it.v) setCurrent(0); e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" }); }}
+                        style={{ flex: "0 0 224px", scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", padding: 16, borderRadius: 22,
+                          border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", boxShadow: on ? "0 10px 24px -16px rgba(0,84,251,0.6)" : "none", transition: "all .2s" }}>
+                        <span style={{ width: 44, height: 44, borderRadius: 14, display: "grid", placeItems: "center", background: on ? "#fff" : "var(--bg)" }}><SportIcon Icon={act.Icon} size={24} selected={on} /></span>
+                        <span style={{ marginTop: 12, fontSize: 17, fontWeight: 650, lineHeight: 1.2, color: "var(--ink)" }}>{fmt(it.v)} {unit} {act.name} Challenge</span>
+                        <span className="cap" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45, flex: 1 }}>Log {fmt(it.v)} {unit} in total. {it.label}.</span>
+                        <span aria-hidden className="btn" style={{ width: "100%", height: 42, marginTop: 14, fontSize: 15, fontWeight: 600, gap: 6,
+                          background: on ? "var(--blue)" : "var(--blue-50)", color: on ? "#fff" : "var(--blue)" }}>
+                          {on ? <><Check size={16} weight="bold" />Goal set</> : "Set as goal"}
                         </span>
-                        <span style={{ width: 22, height: 22, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center", background: on ? "var(--blue)" : "transparent", border: on ? "none" : "1.5px solid var(--gray-2)", color: "#fff" }}>{on && <Check size={12} weight="bold" />}</span>
                       </button>
                     );
                   })}
                 </div>
                 <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
-                  <Stepper label="Your target" help={`${act.name}, in ${unit}`} value={target} unit={unit} step={stepOf[unit]} min={stepOf[unit]} onChange={(v) => { setTarget(v); if (current >= v) setCurrent(0); }} />
-                  <Stepper label="Already done" help="Count what you've completed so far, or start at 0" value={current} unit={unit} step={stepOf[unit]} min={0} onChange={(v) => setCurrent(Math.min(v, target - stepOf[unit]))} />
+                  <Stepper label="Your target" help={`${act.name}, in ${unit}`} value={target} unit={unit} step={stepOf[unit]} min={stepOf[unit]} onChange={(v) => { setTarget(v); if (current >= v) setCurrent(0); }} onEdit={() => setEditing("target")} />
+                  <Stepper label="Already done" help="Count what you've completed so far, or start at 0" value={current} unit={unit} step={stepOf[unit]} min={0} onChange={(v) => setCurrent(Math.min(v, target - stepOf[unit]))} onEdit={() => setEditing("current")} />
                 </div>
               </>
             )}
 
             {step === 2 && (
               <>
-                <h1 className="title">When do you want to achieve it?</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick a deadline and we'll turn it into a daily countdown.</p>
-                <div className="card" style={{ marginTop: 22, padding: 18, display: "flex", alignItems: "center", gap: 18 }} aria-live="polite">
-                  <div style={{ position: "relative", display: "grid", placeItems: "center", flex: "none" }}>
-                    <Ring p={Math.min(1, days / 365)} size={96} stroke={8} track="var(--line)" id="ob-ring" />
-                    <span style={{ position: "absolute", textAlign: "center" }}>
-                      <span className="num" style={{ display: "block", fontSize: 24, fontWeight: 600, lineHeight: 1 }}>{days}</span>
-                      <span className="cap" style={{ fontSize: 11 }}>days left</span>
-                    </span>
+                <h1 className="title">When's your finish line?</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick a date. We'll pace every week to get you there.</p>
+                {/* the countdown leads; the calendar page carries the date; the weekly plan follows */}
+                <div className="card" style={{ position: "relative", overflow: "hidden", isolation: "isolate", marginTop: 22, padding: 16, display: "flex", alignItems: "center", gap: 16 }} aria-live="polite">
+                  {/* brand texture: staggered Ennoo infinity loops in hairline strokes, fading out behind the text */}
+                  <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, backgroundImage: LOOP_PATTERN, backgroundSize: "320px 128px",
+                    WebkitMaskImage: "linear-gradient(90deg, transparent 18%, #000 78%)", maskImage: "linear-gradient(90deg, transparent 18%, #000 78%)" }} />
+                  <div aria-hidden style={{ order: 2, width: 78, flex: "none", borderRadius: 16, overflow: "hidden", border: "1px solid var(--line)", boxShadow: "0 8px 18px -12px rgba(11,18,32,0.45)", textAlign: "center", background: "#fff" }}>
+                    <div style={{ background: "var(--ink)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "5px 4px", whiteSpace: "nowrap" }}>{due.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</div>
+                    <div style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 36, fontWeight: 400, lineHeight: 1, padding: "7px 0 0", letterSpacing: 0 }}>{due.getDate()}</div>
+                    <div className="cap" style={{ fontSize: 11, paddingBottom: 7 }}>{due.toLocaleDateString("en-GB", { weekday: "short" })}</div>
                   </div>
-                  <div>
-                    <p className="cap">Target deadline</p>
-                    <p className="num" style={{ fontSize: 22, fontWeight: 600, color: "var(--blue)", marginTop: 2, letterSpacing: 0 }}>{fmtDate(due)}</p>
-                    <p className="cap" style={{ marginTop: 4, lineHeight: 1.45 }}>About <strong style={{ color: "var(--ink)" }}>{fmt(round(perWeek))} {unit}</strong> a week gets you there.</p>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <span className="num" style={{ fontSize: 34, fontWeight: 650, lineHeight: 1, color: "var(--blue)", letterSpacing: "-0.02em" }}>{days}</span>
+                      <span style={{ fontSize: 17, fontWeight: 600 }}>days to go</span>
+                    </p>
+                    <p className="cap" style={{ marginTop: 6, lineHeight: 1.45 }}>{planLine(activity, unit, perWeek, days, target - current)}</p>
                   </div>
                 </div>
-                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Quick presets</h2></div>
-                <div role="radiogroup" aria-label="Deadline presets" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {timeframes.map((t) => <Option key={t.label} on={days === t.days && !custom} onClick={() => { setDays(t.days); setCustom(""); }} title={t.label} sub={`${t.days} days`} />)}
+                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Choose a timeframe</h2></div>
+                <div role="radiogroup" aria-label="Timeframes" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {timeframes.map((t) => <Option key={t.label} on={days === t.days && !custom} onClick={() => { setDays(t.days); setCustom(""); }} title={t.label} sub={`Ends ${addDays(t.days).getFullYear() === TODAY.getFullYear() ? fmtShort(addDays(t.days)) : fmtDate(addDays(t.days))}`} />)}
                 </div>
-                <label className="card" style={{ position: "relative", marginTop: 10, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", borderColor: custom ? "var(--blue)" : "var(--line)" }}>
+                <button type="button" className="card" onClick={() => setPickingDate(true)} style={{ width: "100%", textAlign: "left", marginTop: 10, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", borderColor: custom ? "var(--blue)" : "var(--line)" }}>
                   <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><CalendarBlank size={20} weight="duotone" /></span>
                   <span style={{ flex: 1 }}>
-                    <span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>Pick an exact date</span>
-                    <span className="cap">{custom ? fmtDate(new Date(custom)) : "Any day after today"}</span>
+                    <span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{custom ? "Your own date" : "Choose your own date"}</span>
+                    <span className="cap">{custom ? `Ends ${fmtDate(new Date(custom))}` : "Any day from tomorrow"}</span>
                   </span>
                   <CaretRight size={16} color="var(--gray-2)" />
-                  <input type="date" aria-label="Exact deadline" min="2026-10-22" value={custom}
-                    onChange={(e) => { setCustom(e.target.value); if (e.target.value) setDays(daysUntil(new Date(e.target.value))); }}
-                    onClick={(e) => (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.()}
-                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
-                </label>
+                </button>
               </>
             )}
 
@@ -344,48 +526,54 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
             {step === 4 && (
               <>
                 <h1 className="title">Here's your goal{first ? `, ${first}` : ""}</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>It lives at the top of your home screen. Every session you log fills the ring.</p>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Share your goal to stay on track. Add your own photo to make it yours.</p>
                 {/* the payoff: everything they chose, set as one card */}
                 <motion.div initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
-                  style={{ marginTop: 22, borderRadius: 28, padding: "22px 22px 24px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
-                    background: "#061026", boxShadow: "0 28px 50px -24px rgba(3,11,36,0.75)" }}>
+                  style={{ margin: "22px auto 0", width: "min(100%, 300px)", aspectRatio: "9 / 16", borderRadius: 28, padding: "20px 20px 22px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
+                    display: "flex", flexDirection: "column", background: "#061026", boxShadow: "0 28px 50px -24px rgba(3,11,36,0.75)" }}>
                   {/* vintage, moody grade: faded film colour, navy wash, heavy vignette, grain */}
-                  <img src={goalPhoto(activity).src} alt="" aria-hidden
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: goalPhoto(activity).pos, zIndex: -1,
-                      filter: "saturate(0.9) sepia(0.14) contrast(1.08) brightness(0.85)" }} />
+                  <img src={photo ?? goalPhoto(activity).src} alt="" aria-hidden
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: photo ? "50% 50%" : goalPhoto(activity).pos, zIndex: -1,
+                      filter: "saturate(0.9) sepia(0.14) contrast(1.08) brightness(0.8)" }} />
                   <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, background: "#0A1E5C", mixBlendMode: "multiply", opacity: 0.22 }} />
                   <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1,
-                    background: "linear-gradient(180deg, rgba(4,8,20,0.6) 0%, rgba(4,8,20,0.15) 34%, rgba(4,8,20,0.25) 60%, rgba(4,8,20,0.85) 100%), radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(2,4,12,0.7) 100%)" }} />
+                    background: "linear-gradient(180deg, rgba(4,8,20,0.7) 0%, rgba(4,8,20,0.2) 30%, rgba(4,8,20,0.35) 62%, rgba(4,8,20,0.9) 100%), radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(2,4,12,0.65) 100%)" }} />
                   <div aria-hidden className="grain" style={{ opacity: 0.35, zIndex: -1 }} />
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.16)", display: "grid", placeItems: "center" }}><act.Icon size={20} weight="fill" /></span>
-                    <span style={{ fontSize: 14, fontWeight: 560 }}>{first ? `${first}'s` : "Your"} {act.name.toLowerCase()} goal</span>
+                  {/* 9:16 so it drops straight into an Instagram story */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.16)", display: "grid", placeItems: "center" }}><act.Icon size={16} weight="fill" /></span>
+                      <span style={{ fontSize: 13, fontWeight: 560 }}>My {act.name.toLowerCase()} goal</span>
+                    </span>
+                    <Wordmark width={56} color="rgba(255,255,255,0.85)" />
                   </div>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 18 }}>
-                    <p style={{ fontFamily: "var(--serif)", fontSize: 56, lineHeight: 0.95 }}>
-                      <span className="num">{fmt(target)}</span> <span style={{ fontSize: 26, fontStyle: "italic" }}>{unit}</span>
-                    </p>
-                    <div style={{ position: "relative", display: "grid", placeItems: "center", flex: "none" }}>
-                      <Ring p={current / target} size={76} stroke={7} id="ob-card-ring" />
-                      <span className="num" style={{ position: "absolute", fontSize: 15, fontWeight: 600 }}>{Math.round((current / target) * 100)}%</span>
-                    </div>
-                  </div>
-                  <p style={{ position: "relative", marginTop: 8, fontSize: 15, color: "rgba(255,255,255,0.82)" }}>by {fmtDate(due)}</p>
-                  <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
-                    {[[`${days}`, "days to go"], [`${fmt(round(perWeek))} ${unit}`, "a week to get there"]].map(([v, l]) => (
-                      <div key={l} style={{ borderRadius: 16, padding: "12px 14px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
-                        <p className="num" style={{ fontSize: 18, fontWeight: 600, letterSpacing: 0 }}>{v}</p>
-                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{l}</p>
-                      </div>
-                    ))}
+                  <p style={{ fontFamily: "var(--serif)", fontSize: 54, lineHeight: 0.95, marginTop: 18 }}>
+                    <span className="num">{fmt(target)}</span> <span style={{ fontSize: 24, fontStyle: "italic" }}>{unit}</span>
+                  </p>
+                  <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>{days} days, about {fmt(round(perWeek))} {unit} a week</p>
+                  <div style={{ flex: 1, minHeight: 0, margin: "14px 4px 8px" }}>
+                    <GoalRoute days={days} current={current} target={target} unit={unit} />
                   </div>
                   {motto.trim() && (
-                    <p style={{ position: "relative", marginTop: 18, paddingLeft: 12, borderLeft: "2px solid #2FD4EC", fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 20, lineHeight: 1.25 }}>"{motto.trim()}"</p>
+                    <p style={{ paddingLeft: 10, borderLeft: "2px solid var(--blue)", fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 17, lineHeight: 1.25 }}>"{motto.trim()}"</p>
+                  )}
+                  {/* signed like a pledge, in a handwritten script */}
+                  {first && (
+                    <p style={{ marginTop: motto.trim() ? 10 : 0, textAlign: "right", fontSize: 13, color: "rgba(255,255,255,0.72)" }}>
+                      by <span style={{ fontFamily: "var(--signature)", fontSize: 36, lineHeight: 0.8, color: "#fff", marginLeft: 4 }}>{first}</span>
+                    </p>
                   )}
                 </motion.div>
-                <button type="button" className="btn" onClick={share} style={{ width: "100%", marginTop: 12, color: "var(--blue)", fontWeight: 560 }} aria-live="polite">
-                  {copied ? "Copied to clipboard" : "Share my goal"}
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 14 }}>
+                  <label className="btn btn-soft" style={{ position: "relative", gap: 8, fontWeight: 560, cursor: "pointer", padding: "0 12px", fontSize: 15, minWidth: 0 }}>
+                    <ImageSquare size={18} weight="bold" />{photo ? "Change photo" : "Add your photo"}
+                    <input type="file" accept="image/*" aria-label="Upload your own photo for the goal card" onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ""; }}
+                      style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
+                  </label>
+                  <button type="button" className="btn btn-soft" onClick={share} style={{ gap: 8, fontWeight: 560, padding: "0 12px", fontSize: 15, minWidth: 0 }} aria-live="polite">
+                    <ShareFat size={18} weight="bold" />{copied ? "Copied" : "Share my goal"}
+                  </button>
+                </div>
               </>
             )}
           </motion.div>
@@ -393,8 +581,22 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
       </div>
 
       <div style={{ flex: "none", padding: "14px 20px 34px", background: "#fff", borderTop: "1px solid var(--line)" }}>
-        <button className="btn btn-blue" style={{ width: "100%" }} onClick={() => move(1)}>{cta}</button>
+        <button className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}<ArrowRight size={18} weight="bold" aria-hidden /></button>
       </div>
+
+      <AnimatePresence>
+        {editing === "target" && (
+          <NumberSheet title="Your target" help={`Total ${unit} of ${act.name.toLowerCase()} you want to reach`} unit={unit} value={target} min={1}
+            onSave={(v) => { setTarget(v); if (current >= v) setCurrent(0); }} onClose={() => setEditing(null)} />
+        )}
+        {editing === "current" && (
+          <NumberSheet title="Already done" help={`How many ${unit} you have so far. Must be less than your target of ${fmt(target)}.`} unit={unit} value={current} min={0} max={target - 1}
+            onSave={setCurrent} onClose={() => setEditing(null)} />
+        )}
+        {pickingDate && (
+          <DateSheet value={due} onSave={(d) => { setCustom(iso(d)); setDays(daysUntil(d)); }} onClose={() => setPickingDate(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

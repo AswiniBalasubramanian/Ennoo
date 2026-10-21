@@ -39,6 +39,7 @@
   --font: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
   --display: "Instrument Sans Variable", "Inter Variable", sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
+  --signature: "Signaturex", "Mrs Saint Delafield", cursive;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -276,3 +277,11 @@ h1, h2, h3, .title, .h2, blockquote {
 }
 
 input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+
+/* Signature script for the goal card. Signaturex is a licensed demo font, not bundled:
+   drop the file in public/fonts/ and it takes over; until then Mrs Saint Delafield stands in. */
+@font-face {
+  font-family: "Signaturex";
+  src: url("/fonts/signaturex.woff2") format("woff2"), url("/fonts/signaturex.otf") format("opentype"), url("/fonts/signaturex.ttf") format("truetype");
+  font-display: swap;
+}
