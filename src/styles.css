@@ -1,0 +1,278 @@
+/*
+  Ennoo colour law
+  ----------------
+  Blue    #0054FB, straight from the logo. Brand moments (welcome, recording,
+          the weekly goal tile), the one primary button, the active tab.
+  Splash  cyan -> green. Only data that is live or improving: rings, route
+          line, today's bar, a new best. Never on chrome, never on text.
+  Ink     near-black. Body text and numbers on light surfaces. Nothing else.
+  White   surfaces, and text on blue.
+  Gray    secondary text and hairlines. Never a fill for buttons.
+
+  Shape: cards 24px, inner tiles 16px, every interactive control is a pill.
+  Elevation: hairlines first. One soft shadow, only on floating things.
+*/
+:root {
+  --blue: #0054fb;
+  --blue-press: #0047d6;
+  --blue-deep: #002c8a;
+  --blue-night: #001a57;
+  --blue-50: #eef3ff;
+  --blue-100: #dbe6ff;
+
+  --cyan: #2fd4ec;
+  --green: #3ee29a;
+  --splash: linear-gradient(90deg, var(--cyan), var(--green));
+
+  --ink: #0b1220;
+  --gray: #667085;
+  --gray-2: #98a2b3;
+  --line: #e7eaf0;
+  --bg: #f4f6f9;
+  --white: #ffffff;
+
+  --r-card: 24px;
+  --r-tile: 16px;
+  --float: 0 1px 2px rgba(11, 18, 32, 0.04), 0 12px 32px -12px rgba(0, 44, 138, 0.18);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --font: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --display: "Instrument Sans Variable", "Inter Variable", sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a, open digits */
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+input, textarea { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.035em; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 10px; }
+
+/* ---------- Presentation stage (desktop only) ---------- */
+.stage {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 300px auto;
+  justify-content: center;
+  align-items: center;
+  gap: 96px;
+  padding: 32px;
+  background: #e9edf3;
+}
+.stage-side { display: flex; flex-direction: column; gap: 28px; }
+.stage-side p { color: var(--gray); font-size: 14px; line-height: 1.55; max-width: 32ch; }
+.screen-list { display: grid; gap: 2px; margin-top: 4px; }
+.screen-list button {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 14px; border-radius: 12px; text-align: left;
+  color: var(--gray); font-size: 14px; transition: background .2s, color .2s;
+}
+.screen-list button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.6); }
+.screen-list button[aria-current="true"] { background: var(--white); color: var(--ink); box-shadow: var(--float); }
+.screen-list span:last-child { font-size: 12px; color: var(--gray-2); }
+
+.phone {
+  position: relative;
+  width: 390px; height: 844px;
+  border-radius: 58px;
+  padding: 9px;
+  background: #0b1220;
+  box-shadow: 0 50px 100px -30px rgba(0, 26, 87, 0.45), 0 0 0 1.5px #2a3242;
+}
+.screen { position: relative; width: 100%; height: 100%; border-radius: 49px; overflow: hidden; background: var(--bg); isolation: isolate; }
+.island { position: absolute; top: 11px; left: 50%; translate: -50% 0; width: 120px; height: 35px; border-radius: 20px; background: #000; z-index: 50; }
+
+@media (min-width: 861px) and (max-height: 960px) { .phone { zoom: 0.88; } }
+@media (min-width: 861px) and (max-height: 840px) { .phone { zoom: 0.76; } }
+@media (min-width: 861px) and (max-height: 720px) { .phone { zoom: 0.64; } }
+@media (max-width: 860px) {
+  .stage { display: block; padding: 0; background: var(--bg); }
+  .stage-side { display: none; }
+  .phone { width: 100%; height: 100dvh; border-radius: 0; padding: 0; box-shadow: none; background: none; }
+  .screen { border-radius: 0; }
+  .island { display: none; }
+}
+
+/* ---------- Status bar ---------- */
+.status {
+  position: absolute; inset: 0 0 auto 0; height: 54px; z-index: 40;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 30px 0 36px; font-size: 15px; font-weight: 600; pointer-events: none; color: var(--ink);
+}
+.status.on-blue { color: var(--white); }
+.status-icons { display: flex; gap: 6px; align-items: center; }
+
+/* ---------- Layout ---------- */
+.body { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.body::-webkit-scrollbar { display: none; }
+.pad { padding-left: 20px; padding-right: 20px; }
+.top { padding-top: 64px; }
+.stack { display: grid; gap: 12px; }
+
+/* ---------- Type ---------- */
+.title { font-size: 32px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.05; }
+.h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.meta { font-size: 13px; color: var(--gray); }
+.cap { font-size: 12px; color: var(--gray); }
+
+/* ---------- Surfaces ---------- */
+.card { background: var(--white); border-radius: var(--r-card); border: 1px solid var(--line); }
+.tile { background: var(--bg); border-radius: var(--r-tile); }
+.rule { height: 1px; background: var(--line); }
+
+/* ---------- Controls ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 52px; padding: 0 24px; border-radius: 999px;
+  font-size: 16px; font-weight: 600; letter-spacing: -0.011em; white-space: nowrap;
+  transition: transform .12s var(--ease), background .2s, box-shadow .2s, filter .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.985); }
+/* Primary: blue gradient with a lit top edge, like light catching a curved surface */
+/* Primary: a restrained gradient (only ~8% lighter at the top), a crisp edge, a tight shadow. */
+.btn-blue {
+  color: var(--white);
+  background: linear-gradient(180deg, #1a66ff 0%, var(--blue) 100%);
+  border: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(0, 34, 110, 0.28), 0 4px 12px -6px rgba(0, 84, 251, 0.55);
+}
+.btn-blue:hover { background: linear-gradient(180deg, #2a72ff 0%, #0a5cff 100%); }
+.btn-blue:active { background: linear-gradient(180deg, var(--blue) 0%, #0049e0 100%); box-shadow: inset 0 1px 2px rgba(0, 20, 80, 0.3); }
+.btn-blue:focus-visible { outline: none; box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--blue); }
+.btn-blue:disabled { background: #9db9f5; box-shadow: none; cursor: default; }
+/* Secondary on photos and dark surfaces: frosted glass */
+.btn-glass {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+@media (prefers-reduced-transparency: reduce) { .btn-glass { background: rgba(20, 28, 48, 0.92); backdrop-filter: none; } }
+.btn-white { background: var(--white); color: var(--blue); }
+.btn-line { border: 1px solid rgba(255, 255, 255, 0.4); color: var(--white); }
+.btn-soft { background: var(--white); border: 1px solid var(--line); color: var(--ink); }
+
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--white); border: 1px solid var(--line); color: var(--ink);
+  transition: transform .18s var(--ease);
+}
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn.on-blue { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.18); color: var(--white); }
+
+.chip {
+  height: 36px; padding: 0 14px; border-radius: 999px; flex: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 14px; color: var(--gray); background: var(--white); border: 1px solid var(--line);
+  transition: background .2s, color .2s, border-color .2s;
+}
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.chip.on-blue { background: transparent; border-color: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
+.chip.on-blue[aria-pressed="true"] { background: var(--white); border-color: var(--white); color: var(--blue); }
+
+.link { font-size: 14px; font-weight: 560; color: var(--blue); display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---------- Tab bar ---------- */
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+  height: 86px; padding: 0 8px 22px;
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+  background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+}
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; font-size: 11px; font-weight: 500; color: var(--gray-2); transition: color .2s; }
+.tab[aria-current="page"] { color: var(--blue); }
+.record-fab {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--white);
+  background: linear-gradient(180deg, #1a66ff 0%, var(--blue) 100%);
+  border: 0;
+  box-shadow: 0 10px 24px -8px rgba(0, 84, 251, 0.6);
+  transition: transform .18s var(--ease);
+}
+.record-fab:active { transform: scale(0.93); }
+
+/* ---------- Forms ---------- */
+.field { display: grid; gap: 8px; }
+.field label { font-size: 14px; font-weight: 560; }
+.input {
+  height: 50px; width: 100%; padding: 0 16px; border-radius: 14px;
+  border: 1px solid var(--line); background: var(--white); font-size: 16px; color: var(--ink);
+  transition: border-color .2s, box-shadow .2s; outline: none;
+}
+.input::placeholder { color: var(--gray-2); }
+.input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-50); }
+.input[aria-invalid="true"] { border-color: #d92d20; box-shadow: 0 0 0 4px #fef3f2; }
+.help { font-size: 13px; color: var(--gray); }
+.err { font-size: 13px; color: #d92d20; }
+
+/* ---------- Section header ---------- */
+.sec { display: flex; justify-content: space-between; align-items: baseline; margin: 32px 0 12px; }
+
+/* Headings use Instrument Serif; body copy, labels and numbers stay in Inter.
+   It ships in one weight, so weight is pinned to 400 (no faux bold), and
+   font-size-adjust matches its x-height to Inter so sizes read as designed. */
+h1, h2, h3, .title, .h2, blockquote {
+  font-family: var(--serif);
+  font-weight: 400 !important;
+  font-size-adjust: 0.5;
+  letter-spacing: -0.01em !important;
+  line-height: 1.1;
+}
+.title { padding-bottom: 2px; text-wrap: balance; }
+/* Small section labels read as UI, so they stay in Inter. */
+.sec .h2, .sec h2 {
+  font-family: var(--font, "Inter Variable", Inter, system-ui, sans-serif);
+  font-weight: 600 !important;
+  font-size: 15px;
+  font-size-adjust: none;
+  letter-spacing: -0.01em !important;
+}
+
+/* Glass pill for stats on blue or photo surfaces */
+.chip-glass {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px;
+  font-size: 13px; color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.chip-glass strong { color: #fff; }
+
+/* Inline button spinner */
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-blue[aria-busy="true"] { background: linear-gradient(180deg, #1a66ff 0%, var(--blue) 100%); opacity: 0.9; cursor: progress; }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
+
+/* Instrument Serif for entry-flow titles (one weight only, so size does the work) */
+.serif-title { font-size: 34px; }
+
+/* Duotone sport icons: ink line, blue gradient fill */
+.duo-icon { color: var(--ink); }
+.duo-icon path[opacity="0.2"] { fill: url(#duo-grad); opacity: 0.75; }
+
+/* Film grain for photo surfaces (static, so it costs nothing per frame) */
+.grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Collage photos on the welcome: same vintage grade as the hero so mixed stock reads as one set */
+.pill-photo {
+  height: 88px; border-radius: 44px; object-fit: cover; flex: none;
+  filter: saturate(0.62) contrast(1.08) brightness(0.82) sepia(0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  outline: 1px solid rgba(255, 255, 255, 0.1); outline-offset: -1px;
+}
+
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
