@@ -346,7 +346,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     setSharing("busy");
     try {
       await document.fonts.ready;
-      const blob = await toBlob(node, { pixelRatio: 1080 / node.offsetWidth, cacheBust: true, style: { transform: "none", boxShadow: "none", borderRadius: "0" } });
+      const blob = await toBlob(node, { pixelRatio: 1, canvasWidth: 1080, canvasHeight: 1920, cacheBust: true, style: { margin: "0", transform: "none", boxShadow: "none", borderRadius: "0" } });
       if (!blob) throw new Error("render failed");
       const file = new File([blob], `ennoo-${act.name.toLowerCase()}-goal.png`, { type: "image/png" });
       const text = `My ${act.name.toLowerCase()} goal on Ennoo: ${fmt(target)} ${unit} by ${fmtDate(due)}.`;
