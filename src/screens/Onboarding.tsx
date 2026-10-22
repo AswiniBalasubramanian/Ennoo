@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toBlob } from "html-to-image";
 import { ArrowLeft, ArrowRight, MagnifyingGlass, Minus, Plus, Check, CalendarBlank, CaretRight, CaretLeft, X, ImageSquare, ShareFat } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, Wordmark, type Route } from "../components";
 import { activities, byId, mottos, groupLabel, type Group } from "../data";
@@ -336,11 +337,30 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     setDir(d); setStep(step + d); setStuck(false);
   };
   const cta = [`Continue with ${act.name}`, "Continue", "Continue", "Create my goal", "Start my journey"][step];
+  // the card itself goes out as a 1080×1920 PNG: native share sheet where files are supported, otherwise a download
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState<"idle" | "busy" | "saved">("idle");
   const share = async () => {
-    const text = `${first}'s goal on Ennoo: ${fmt(target)} ${unit} of ${act.name.toLowerCase()} by ${fmtDate(due)}.${motto.trim() ? ` "${motto.trim()}"` : ""}`;
-    try { if (navigator.share) await navigator.share({ title: "My Ennoo goal", text }); else { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2200); } } catch { /* share sheet dismissed */ }
+    const node = cardRef.current;
+    if (!node || sharing === "busy") return;
+    setSharing("busy");
+    try {
+      await document.fonts.ready;
+      const blob = await toBlob(node, { pixelRatio: 1080 / node.offsetWidth, cacheBust: true, style: { transform: "none", boxShadow: "none", borderRadius: "0" } });
+      if (!blob) throw new Error("render failed");
+      const file = new File([blob], `ennoo-${act.name.toLowerCase()}-goal.png`, { type: "image/png" });
+      const text = `My ${act.name.toLowerCase()} goal on Ennoo: ${fmt(target)} ${unit} by ${fmtDate(due)}.`;
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "My Ennoo goal", text });
+        setSharing("idle");
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        setSharing("saved"); setTimeout(() => setSharing("idle"), 2200);
+      }
+    } catch { setSharing("idle"); /* share sheet dismissed */ }
   };
-  const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState<null | "target" | "current">(null);
   const [pickingDate, setPickingDate] = useState(false);
   // their own photo for the story card; kept as an object URL, released when replaced or on unmount
@@ -528,7 +548,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 <h1 className="title">Here's your goal{first ? `, ${first}` : ""}</h1>
                 <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Share your goal to stay on track. Add your own photo to make it yours.</p>
                 {/* the payoff: everything they chose, set as one card */}
-                <motion.div initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
+                <motion.div ref={cardRef} initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
                   style={{ margin: "22px auto 0", width: "min(100%, 300px)", aspectRatio: "9 / 16", borderRadius: 28, padding: "20px 20px 22px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
                     display: "flex", flexDirection: "column", background: "#061026", boxShadow: "0 28px 50px -24px rgba(3,11,36,0.75)" }}>
                   {/* vintage, moody grade: faded film colour, navy wash, heavy vignette, grain */}
@@ -554,9 +574,9 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   {/* the motto as a pull quote: a large hanging opening mark, italic serif, a soft closing mark */}
                   {motto.trim() && (
                     <blockquote style={{ position: "relative", margin: "20px 0 0", padding: "4px 0 0 22px" }}>
-                      <span aria-hidden style={{ position: "absolute", left: -2, top: -10, fontFamily: "var(--serif)", fontSize: 54, lineHeight: 1, color: "#3D8BFF" }}>“</span>
+                      <span aria-hidden style={{ position: "absolute", left: -2, top: -10, fontFamily: "var(--serif)", fontSize: 54, lineHeight: 1, color: "rgba(255,255,255,0.9)" }}>“</span>
                       <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 19, lineHeight: 1.22, color: "#fff", textWrap: "balance" }}>
-                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 32, lineHeight: 0, color: "#3D8BFF", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
+                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 32, lineHeight: 0, color: "rgba(255,255,255,0.9)", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
                       </p>
                     </blockquote>
                   )}
@@ -576,8 +596,9 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     <input type="file" accept="image/*" aria-label="Upload your own photo for the goal card" onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ""; }}
                       style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
                   </label>
-                  <button type="button" className="btn btn-soft" onClick={share} style={{ gap: 8, fontWeight: 560, padding: "0 12px", fontSize: 15, minWidth: 0 }} aria-live="polite">
-                    <ShareFat size={18} weight="bold" />{copied ? "Copied" : "Share my goal"}
+                  <button type="button" className="btn btn-soft" onClick={share} disabled={sharing === "busy"} aria-busy={sharing === "busy"} style={{ gap: 8, fontWeight: 560, padding: "0 12px", fontSize: 15, minWidth: 0 }} aria-live="polite">
+                    {sharing === "busy" ? <span className="spinner" aria-hidden /> : <ShareFat size={18} weight="bold" />}
+                    {sharing === "busy" ? "Preparing" : sharing === "saved" ? "Image saved" : "Share my goal"}
                   </button>
                 </div>
               </>
