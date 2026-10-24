@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toBlob } from "html-to-image";
-import { ArrowLeft, ArrowRight, MagnifyingGlass, Minus, Plus, Check, CalendarBlank, CaretRight, CaretLeft, X, ImageSquare, ShareFat } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, MagnifyingGlass, Check, Target, CheckCircle, CalendarBlank, CaretRight, CaretLeft, X, ImageSquare, ShareFat } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, Wordmark, type Route } from "../components";
-import { activities, byId, mottos, groupLabel, type Group } from "../data";
+import { activities, byId, mottos, groupLabel, groupOrder, type Group } from "../data";
 
 /* Empty search: a lens over an empty lane, with one-tap suggestions so the user is never stuck. */
 function EmptySearch({ q, onPick }: { q: string; onPick: (v: string) => void }) {
@@ -102,7 +102,7 @@ function GoalRoute({ days, current, target, unit }: { days: number; current: num
               <circle cx={x} cy={y} r="6" fill="#fff" />
             )}
             <text x={x + dx} y={y + dy - 6} textAnchor={anchor} fill="#fff" fontSize="12" fontWeight="600" fontFamily="Inter, system-ui">{start ? "Today" : end ? `Goal, ${s.date}` : s.date}</text>
-            <text x={x + dx} y={y + dy + 8} textAnchor={anchor} fill="rgba(255,255,255,0.72)" fontSize="11" fontFamily="Inter, system-ui">{s.val}</text>
+            <text x={x + dx} y={y + dy + 8} textAnchor={anchor} fill="rgba(255,255,255,0.72)" fontSize="11" fontFamily="Inter, system-ui">{start && current > 0 ? `${s.val} done` : s.val}</text>
           </motion.g>
         );
       })}
@@ -110,39 +110,118 @@ function GoalRoute({ days, current, target, unit }: { days: number; current: num
   );
 }
 
-/* Bottom sheet for typing a number on the phone keyboard */
-function NumberSheet({ title, help, unit, value, min, max, onSave, onClose }: { title: string; help: string; unit: string; value: number; min: number; max?: number; onSave: (v: number) => void; onClose: () => void }) {
-  const [text, setText] = useState(String(value));
-  const n = Number(text);
-  const err = text === "" ? "Enter a number" : !Number.isFinite(n) ? "Numbers only" : n < min ? `At least ${fmt(min)} ${unit}` : max !== undefined && n > max ? `At most ${fmt(max)} ${unit}` : "";
-  const save = () => { if (!err) { onSave(Math.round(n)); onClose(); } };
-  // focus without letting the browser scroll the (overflow: hidden) screen to reveal the field
+/* One scroll wheel: snaps row by row, the centred row is the value. Only rows near the
+   current one are rendered, so even a 0–5,000 range stays light. Arrow keys step it too. */
+// three rows visible: compact enough that the sheet, the keypad and the page above all fit together
+const ROW = 44, VISIBLE = 3, PAD = ROW * ((VISIBLE - 1) / 2);
+
+/* How much of the screen the on-screen keyboard covers, so a sheet can sit just above it.
+   Mobile browsers shrink the visual viewport, not the layout, when the keypad opens. */
+function useKeyboardInset() {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+    vv.addEventListener("resize", update); vv.addEventListener("scroll", update); update();
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+  }, []);
+  return inset;
+}
+function Wheel({ items, index, onChange, label, wide }: { items: string[]; index: number; onChange: (i: number) => void; label: string; wide?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cur, setCur] = useState(index);
+  useEffect(() => { if (ref.current) ref.current.scrollTop = index * ROW; }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const go = (i: number) => ref.current?.scrollTo({ top: Math.max(0, Math.min(items.length - 1, i)) * ROW, behavior: "smooth" });
+  const onScroll = () => {
+    const i = Math.max(0, Math.min(items.length - 1, Math.round((ref.current?.scrollTop ?? 0) / ROW)));
+    if (i !== cur) { setCur(i); onChange(i); }
+  };
+  const from = Math.max(0, cur - 30), to = Math.min(items.length, cur + 31);
+  return (
+    <div ref={ref} role="spinbutton" tabIndex={0} aria-label={label} aria-valuenow={cur} aria-valuetext={items[cur]}
+      onScroll={onScroll} onKeyDown={(e) => { if (e.key === "ArrowUp") { e.preventDefault(); go(cur - 1); } if (e.key === "ArrowDown") { e.preventDefault(); go(cur + 1); } }}
+      style={{ position: "relative", height: ROW * VISIBLE, overflowY: "auto", scrollSnapType: "y mandatory", scrollbarWidth: "none", overscrollBehavior: "contain",
+        WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 30%, #000 70%, transparent 100%)", maskImage: "linear-gradient(180deg, transparent 0%, #000 30%, #000 70%, transparent 100%)",
+        borderRadius: 12, outlineOffset: -2 }}>
+      <div style={{ height: PAD + from * ROW }} />
+      {items.slice(from, to).map((t, k) => {
+        const i = from + k, d = Math.abs(i - cur);
+        return (
+          <div key={i} onClick={() => go(i)} className="num"
+            style={{ height: ROW, scrollSnapAlign: "center", display: "grid", placeItems: "center", cursor: "pointer", letterSpacing: 0,
+              fontSize: d === 0 ? (wide ? 30 : 28) : 22, fontWeight: d === 0 ? 650 : 500,
+              color: d === 0 ? "var(--ink)" : "var(--gray)", opacity: d === 0 ? 1 : d === 1 ? 0.7 : 0.4, transition: "font-size .12s, opacity .12s" }}>
+            {t}
+          </div>
+        );
+      })}
+      <div style={{ height: PAD + (items.length - to) * ROW }} />
+    </div>
+  );
+}
+
+/* Bottom sheet with scroll wheels for a goal number: whole number, a decimal for distances,
+   and km or miles (miles are converted back to km on Done). */
+const wheelMax: Record<string, number> = { km: 5000, workouts: 1000, sessions: 1000, floors: 5000, races: 50, routes: 500 };
+const MI = 1.609344;
+function NumberSheet({ title, unit, value, min, max, onSave, onClose }: { title: string; help?: string; unit: string; value: number; min: number; max?: number; onSave: (v: number) => void; onClose: () => void }) {
+  const dist = unit === "km";
+  const top = wheelMax[unit] ?? 1000;
+  // the whole number is typed (big targets like 2,500 are quicker on the keypad); decimal and unit stay on wheels
+  const [text, setText] = useState(String(Math.floor(value)));
+  const whole = text === "" ? NaN : Number(text);
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { const t = setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); inputRef.current?.select(); }, 60); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); inputRef.current?.select(); }, 80); return () => clearTimeout(t); }, []);
+  const [tenth, setTenth] = useState(Math.round((value - Math.floor(value)) * 10) % 10);
+  const [mi, setMi] = useState(false);
+  const raw = whole + (dist ? tenth / 10 : 0);
+  const v = Math.round((mi ? raw * MI : raw) * 10) / 10; // always stored in the goal's own unit
+  const err = text === "" ? "Enter a number" : v > top ? `Up to ${fmt(top)} ${unit}` : v < min ? `At least ${fmt(min)} ${unit}` : max !== undefined && v > max ? `Less than your target of ${fmt(max + 1)} ${unit}` : "";
+  const kb = useKeyboardInset();
+  const done = () => { if (!err) { onSave(v); onClose(); } };
   return (
     <motion.div key="sheet" initial={{ opacity: 1 }} exit={{ opacity: 1 }} transition={{ duration: 0.3 }}
-      style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "flex-end" }}>
+      style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "flex-end", paddingBottom: kb, transition: "padding-bottom .25s var(--ease)" }}>
       <motion.div aria-hidden onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
         style={{ position: "absolute", inset: 0, background: "rgba(11,18,32,0.42)" }} />
-      <motion.form role="dialog" aria-modal="true" aria-labelledby="sheet-title" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); save(); }}
-        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      <motion.div role="dialog" aria-modal="true" aria-labelledby="sheet-title" onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter") done(); }}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 420, damping: 40 }}
-        style={{ position: "relative", width: "100%", background: "#fff", borderRadius: "24px 24px 0 0", padding: "10px 20px 28px", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)" }}>
-        <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 16px" }} />
-        <h2 id="sheet-title" className="h2" style={{ fontSize: 18 }}>{title}</h2>
-        <p className="cap" style={{ marginTop: 4 }}>{help}</p>
-        <label style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 18, padding: "10px 16px", borderRadius: 16, border: `1.5px solid ${err && text !== "" ? "var(--red, #E5484D)" : "var(--blue)"}`, background: "var(--blue-50)" }}>
-          <input ref={inputRef} inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" aria-label={title} aria-invalid={!!err} aria-describedby="sheet-err"
-            value={text} onChange={(e) => setText(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-            className="num" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: 34, fontWeight: 600, color: "var(--ink)", letterSpacing: 0 }} />
-          <span style={{ fontSize: 16, fontWeight: 500, color: "var(--gray)" }}>{unit}</span>
-        </label>
-        <p id="sheet-err" role="alert" className="cap" style={{ minHeight: 18, marginTop: 6, color: err && text !== "" ? "#C9363B" : "var(--gray)" }}>{err && text !== "" ? err : " "}</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 8 }}>
-          <button type="button" className="btn btn-soft" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-blue" disabled={!!err} style={{ opacity: err ? 0.5 : 1 }}>Save</button>
+        style={{ position: "relative", width: "100%", background: "#fff", borderRadius: "24px 24px 0 0", padding: kb ? "10px 20px 14px" : "10px 20px 28px", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)" }}>
+        <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 12px" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 id="sheet-title" className="h2" style={{ fontSize: 20 }}>{title}</h2>
+          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ border: 0, marginRight: -10 }}><X size={20} weight="bold" /></button>
         </div>
-      </motion.form>
+
+        {/* the wheels, over one highlight band marking the chosen row */}
+        <div style={{ position: "relative", marginTop: 10 }}>
+          <span aria-hidden style={{ position: "absolute", left: 0, right: 0, top: PAD, height: ROW, borderRadius: 14, background: "var(--blue-50)" }} />
+          <div style={{ position: "relative", display: "grid", gridTemplateColumns: dist ? "1.3fr 16px 0.9fr 1fr" : "1fr", alignItems: "center" }}>
+            <label style={{ height: ROW * VISIBLE, display: "grid", alignItems: "center", cursor: "text" }}>
+              <input ref={inputRef} inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" aria-label="Number" aria-invalid={!!err}
+                value={text} onChange={(e) => setText(e.target.value.replace(/[^0-9]/g, "").replace(/^0+(?=[0-9])/, "").slice(0, 5))}
+                                className="num num-input" style={{ width: "100%", height: ROW, border: 0, outline: "none", background: "transparent", textAlign: "center",
+                  fontSize: 30, fontWeight: 650, color: "var(--ink)", letterSpacing: 0, caretColor: "var(--blue)",
+                  textDecoration: "underline dashed var(--blue-100)", textUnderlineOffset: 8, textDecorationThickness: 2 }} />
+            </label>
+            {dist && <>
+              <span aria-hidden className="num" style={{ fontSize: 28, fontWeight: 650, textAlign: "center", paddingBottom: 4 }}>.</span>
+              <Wheel label="Decimal" items={Array.from({ length: 10 }, (_, i) => String(i))} index={tenth} onChange={setTenth} />
+              <Wheel label="Unit" items={["km", "mi"]} index={mi ? 1 : 0} onChange={(i) => setMi(i === 1)} />
+            </>}
+          </div>
+          <div aria-hidden className="cap" style={{ display: "grid", gridTemplateColumns: dist ? "1.3fr 16px 0.9fr 1fr" : "1fr", textAlign: "center", marginTop: 8, fontWeight: 600 }}>
+            {dist ? <><span>Type a number</span><span /><span>Decimal</span><span>Unit</span></> : <span>Type a number, in {unit}</span>}
+          </div>
+        </div>
+
+        <p role="status" className="cap" style={{ minHeight: 18, marginTop: 12, textAlign: "center", fontSize: 13, color: err ? "#C9363B" : "var(--gray)" }}>
+          {err || (mi ? `That's ${fmt(v)} km` : " ")}
+        </p>
+        <button type="button" className="btn btn-blue" disabled={!!err} style={{ width: "100%", marginTop: 8, opacity: err ? 0.5 : 1 }}
+          onClick={done}>Done</button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -235,15 +314,14 @@ const ideasFor = (id: string): Idea[] => {
 /* Goal-card backdrop: a moody photo from the sport's world (Unsplash), graded vintage in CSS */
 const goalPhoto = (id: string) => {
   const { group } = byId(id);
-  if (["cycle", "skate"].includes(id)) return { src: "/img/goal-ride.jpg", pos: "40% 70%" };
-  if (["swim", "row", "kayak", "canoe", "paddle", "surf"].includes(id)) return { src: "/img/goal-swim.jpg", pos: "50% 50%" };
-  if (["hike", "trek", "climb", "ski", "snowboard", "yoga", "pilates", "mobility", "stretch"].includes(id)) return { src: "/img/goal-trail.jpg", pos: "70% 60%" };
-  if (group === "Strength") return { src: "/img/goal-gym.jpg", pos: "50% 50%" };
+  if (group === "Cycling" || ["skate", "rollerski", "skateboard"].includes(id)) return { src: "/img/goal-ride.jpg", pos: "40% 70%" };
+  if (group === "Water") return { src: "/img/goal-swim.jpg", pos: "50% 50%" };
+  if (group === "Snow" || ["hike", "trek", "climb", "yoga", "pilates", "mobility", "stretch"].includes(id)) return { src: "/img/goal-trail.jpg", pos: "70% 60%" };
+  if (group === "Strength" || group === "Racket" || group === "Team") return { src: "/img/goal-gym.jpg", pos: "50% 50%" };
   // motion-blurred stride, supplied by the client
   return { src: "/img/goal-run.webp", pos: "50% 45%" };
 };
 const QUESTIONS = 4; // sport, goal, deadline, motto; the goal card follows
-const stepOf: Record<string, number> = { km: 10, workouts: 5, sessions: 5, floors: 10, races: 1, routes: 5 };
 // the Ennoo mark (from the brand file) as a hairline outline, tiled
 const LOOP_PATTERN = "url(/img/loop-pattern.svg)";
 const timeframes = [
@@ -253,7 +331,7 @@ const timeframes = [
   { label: "1 year", days: 365 },
 ];
 /* Turn a weekly total into the sessions people actually plan in */
-const sessionNoun: Record<string, string> = { run: "runs", trail: "runs", walk: "walks", hike: "hikes", trek: "treks", cycle: "rides", swim: "swims", row: "rows", kayak: "paddles", canoe: "paddles", paddle: "paddles", ski: "ski days", skate: "skates" };
+const sessionNoun: Record<string, string> = { vrun: "runs", mtb: "rides", gravel: "rides", vride: "rides", ebike: "rides", emtb: "rides", handcycle: "rides", velomobile: "rides", vrow: "rows", sail: "sails", nordic: "ski days", backcountry: "tours", snowshoe: "outings", wheelchair: "pushes", run: "runs", trail: "runs", walk: "walks", hike: "hikes", trek: "treks", cycle: "rides", swim: "swims", row: "rows", kayak: "paddles", canoe: "paddles", paddle: "paddles", ski: "ski days", skate: "skates" };
 function planLine(id: string, unit: string, perWeek: number, days: number, left: number) {
   const r1 = (n: number) => (n >= 10 ? Math.round(n) : Math.round(n * 10) / 10);
   if (unit === "km") {
@@ -264,24 +342,27 @@ function planLine(id: string, unit: string, perWeek: number, days: number, left:
   if (perWeek < 1) { const gap = Math.max(2, Math.round(1 / perWeek)); return `That's about one ${unit.replace(/s$/, "")} every ${gap} weeks.`; }
   return `That's about ${fmt(Math.round(perWeek))} ${unit} a week.`;
 }
-const groups: ("All" | Group)[] = ["All", "Endurance", "Strength", "Adventure"];
+const groups: ("All" | Group)[] = ["All", ...groupOrder];
 const fmt = (n: number) => n.toLocaleString("en-IN");
 
-function Stepper({ label, help, value, unit, step, min, onChange, onEdit }: { label: string; help: string; value: number; unit: string; step: number; min: number; onChange: (v: number) => void; onEdit: () => void }) {
+/* A goal number as one tappable row: icon, value, a hint, a chevron. The number sheet is the
+   only way to change it, so number, decimal and unit are all set in one place. */
+function PickerField({ label, hint, value, unit, Icon, onEdit }: { label: string; hint: string; value: number; unit: string; Icon: typeof Target; onEdit: () => void }) {
   return (
-    <div className="card" style={{ padding: "16px 16px 16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{ flex: 1 }}>
-        <p className="cap">{label}</p>
-        {/* tap the number to type it instead of stepping */}
-        <button type="button" onClick={onEdit} aria-label={`${label}: ${fmt(value)} ${unit}. Tap to type a number`} className="num"
-          style={{ display: "inline-flex", alignItems: "baseline", gap: 4, fontSize: 24, fontWeight: 600, marginTop: 2, padding: "0 0 2px", borderBottom: "1.5px dashed var(--blue-100)", textAlign: "left" }} aria-live="polite">
-          {fmt(value)} <span style={{ fontSize: 14, fontWeight: 500, color: "var(--gray)", letterSpacing: 0 }}>{unit}</span>
-        </button>
-        <p className="cap" style={{ marginTop: 2 }}>{help}</p>
-      </div>
-      <button className="icon-btn" aria-label={`Decrease ${label.toLowerCase()}`} onClick={() => onChange(Math.max(min, value - step))} disabled={value <= min} style={{ opacity: value <= min ? 0.4 : 1 }}><Minus size={18} weight="bold" /></button>
-      <button className="icon-btn" aria-label={`Increase ${label.toLowerCase()}`} onClick={() => onChange(value + step)}><Plus size={18} weight="bold" /></button>
-    </div>
+    <button type="button" className="card" onClick={onEdit} aria-label={`${label}: ${fmt(value)} ${unit}. Tap to change it`}
+      style={{ width: "100%", textAlign: "left", padding: "14px 14px 14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
+      <span aria-hidden style={{ width: 44, height: 44, borderRadius: 14, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}>
+        <Icon size={22} weight="duotone" />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span className="cap" style={{ display: "block" }}>{label}</span>
+        <span className="num" aria-live="polite" style={{ display: "block", fontSize: 24, fontWeight: 650, letterSpacing: 0, lineHeight: 1.2, marginTop: 1 }}>
+          {fmt(value)} <span style={{ fontSize: 15, fontWeight: 600, color: "var(--blue)" }}>{unit}</span>
+        </span>
+        <span className="cap" style={{ display: "block", marginTop: 2 }}>{hint}</span>
+      </span>
+      <CaretRight size={18} color="var(--gray)" aria-hidden />
+    </button>
   );
 }
 
@@ -328,7 +409,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const round = (n: number) => (n >= 10 ? Math.round(n) : Math.round(n * 10) / 10);
 
   const list = useMemo(() => activities.filter((a) => (group === "All" || a.group === group) && a.name.toLowerCase().includes(q.trim().toLowerCase())), [q, group]);
-  const sections = (["Endurance", "Strength", "Adventure"] as Group[]).map((g) => ({ g, items: list.filter((a) => a.group === g) })).filter((s) => s.items.length);
+  const sections = groupOrder.map((g) => ({ g, items: list.filter((a) => a.group === g) })).filter((s) => s.items.length);
 
   const pick = (id: string) => { setActivity(id); setTarget(ideasFor(id)[1].v); setCurrent(0); };
   const move = (d: number) => {
@@ -403,12 +484,12 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 <div ref={titleRef} style={{ ...band(stuck), top: -24, zIndex: 3, margin: "-24px -20px 0", padding: "24px 20px 8px" }}>
                   <h1 className="title">{first ? `${first}, what's your primary focus?` : "What's your primary focus?"}</h1>
                 </div>
-                <p className="meta" style={{ fontSize: 15, lineHeight: 1.5 }}>Pick your main sport. We'll shape your goal and stats around it, and you can still log all 27.</p>
+                <p className="meta" style={{ fontSize: 15, lineHeight: 1.5 }}>Pick your main sport. We'll shape your goal and stats around it, and you can still log all {activities.length}.</p>
                 <div style={{ ...band(stuck), top: titleH - 24, zIndex: 2, margin: "0 -20px", padding: "20px 20px 12px", boxShadow: stuck ? "0 1px 0 var(--line)" : "none" }}>
                 <div style={{ position: "relative" }}>
                   <MagnifyingGlass size={18} color="var(--gray)" style={{ position: "absolute", left: 16, top: 18 }} />
                   <input ref={searchRef} type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }}
-                    placeholder="Search all 27 activities" aria-label="Search activities" style={{ paddingLeft: 44, paddingRight: q ? 48 : 16, background: "var(--bg)", borderColor: "transparent" }} />
+                    placeholder={`Search all ${activities.length} activities`} aria-label="Search activities" style={{ paddingLeft: 44, paddingRight: q ? 48 : 16, background: "var(--bg)", borderColor: "transparent" }} />
                   <AnimatePresence>
                     {q && (
                       <motion.button key="clear" type="button" aria-label="Clear search" onClick={() => search("")}
@@ -422,7 +503,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
                   {groups.map((g) => (
                     <button key={g} className="chip" aria-pressed={group === g} onClick={() => setGroup(g)}>
-                      {g}<span style={{ opacity: 0.6 }} className="num">{g === "All" ? 27 : activities.filter((a) => a.group === g).length}</span>
+                      {g}<span style={{ opacity: 0.6 }} className="num">{g === "All" ? activities.length : activities.filter((a) => a.group === g).length}</span>
                     </button>
                   ))}
                 </div>
@@ -475,8 +556,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   })}
                 </div>
                 <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
-                  <Stepper label="Your target" help={`${act.name}, in ${unit}`} value={target} unit={unit} step={stepOf[unit]} min={stepOf[unit]} onChange={(v) => { setTarget(v); if (current >= v) setCurrent(0); }} onEdit={() => setEditing("target")} />
-                  <Stepper label="Already done" help="Count what you've completed so far, or start at 0" value={current} unit={unit} step={stepOf[unit]} min={0} onChange={(v) => setCurrent(Math.min(v, target - stepOf[unit]))} onEdit={() => setEditing("current")} />
+                  <PickerField label="Your target" hint="Tap to enter your number" value={target} unit={unit} Icon={Target} onEdit={() => setEditing("target")} />
+                  <PickerField label="Already done" hint={current > 0 ? "Counted toward your goal" : "Optional, leave at 0 to start fresh"} value={current} unit={unit} Icon={CheckCircle} onEdit={() => setEditing("current")} />
                 </div>
               </>
             )}
@@ -492,7 +573,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     WebkitMaskImage: "linear-gradient(90deg, transparent 18%, #000 78%)", maskImage: "linear-gradient(90deg, transparent 18%, #000 78%)" }} />
                   <div aria-hidden style={{ order: 2, width: 78, flex: "none", borderRadius: 16, overflow: "hidden", border: "1px solid var(--line)", boxShadow: "0 8px 18px -12px rgba(11,18,32,0.45)", textAlign: "center", background: "#fff" }}>
                     <div style={{ background: "var(--ink)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "5px 4px", whiteSpace: "nowrap" }}>{due.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</div>
-                    <div style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 36, fontWeight: 400, lineHeight: 1, padding: "7px 0 0", letterSpacing: 0 }}>{due.getDate()}</div>
+                    <div style={{ fontFamily: "var(--sport)", fontStretch: "72%", fontSize: 36, fontWeight: 620, lineHeight: 1, padding: "7px 0 0", letterSpacing: 0 }}>{due.getDate()}</div>
                     <div className="cap" style={{ fontSize: 11, paddingBottom: 7 }}>{due.toLocaleDateString("en-GB", { weekday: "short" })}</div>
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
@@ -567,10 +648,24 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     </span>
                     <Wordmark width={56} color="rgba(255,255,255,0.85)" />
                   </div>
-                  <p style={{ fontFamily: "var(--serif)", fontSize: 54, lineHeight: 0.95, marginTop: 18 }}>
+                  <p style={{ fontFamily: "var(--sport)", fontStretch: "72%", fontWeight: 620, fontSize: 56, lineHeight: 0.95, marginTop: 18 }}>
                     <span className="num">{fmt(target)}</span> <span style={{ fontSize: 24, fontStyle: "italic" }}>{unit}</span>
                   </p>
                   <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>{days} days, about {fmt(round(perWeek))} {unit} a week</p>
+                  {/* a head start, when they've already logged some of it */}
+                  {current > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 12, color: "rgba(255,255,255,0.8)" }}>
+                        <span><strong className="num" style={{ color: "#fff", fontWeight: 650, letterSpacing: 0 }}>{fmt(current)} {unit}</strong> done already</span>
+                        <span className="num" style={{ letterSpacing: 0 }}>{Math.round((current / target) * 100)}%</span>
+                      </div>
+                      <div role="progressbar" aria-label="Progress so far" aria-valuemin={0} aria-valuemax={target} aria-valuenow={current}
+                        style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", marginTop: 6, overflow: "hidden" }}>
+                        <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: Math.max(0.02, current / target) }} transition={{ delay: 0.5, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ height: "100%", background: "linear-gradient(90deg, #3D8BFF, #fff)", transformOrigin: "left", borderRadius: 2 }} />
+                      </div>
+                    </div>
+                  )}
                   {/* the motto as a pull quote: a large hanging opening mark, italic serif, a soft closing mark */}
                   {motto.trim() && (
                     <blockquote style={{ position: "relative", margin: "20px 0 0", padding: "4px 0 0 22px" }}>

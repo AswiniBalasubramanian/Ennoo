@@ -54,7 +54,7 @@ export default function App() {
     welcome: <Welcome go={go} />,
     login: <Login go={go} />,
     signup: <Signup go={go} onName={setFirstName} />,
-    onboarding: <Onboarding go={go} name={firstName} initialStep={obStep} onDone={(p) => { setProfile(p); go("pro"); }} />,
+    onboarding: <Onboarding go={go} name={firstName} initialStep={obStep} onDone={(p) => { setProfile(p); go("home"); }} />,
     pro: <Pro go={go} />,
     home: <Home go={go} profile={profile} />,
     search: <Search go={go} />,

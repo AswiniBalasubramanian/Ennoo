@@ -1,10 +1,9 @@
 // Sample data for the prototype. Replace with the app's real API.
 // Photos are from Unsplash, saved in public/img so the prototype works offline.
 import {
-  PersonSimpleRun, PersonSimpleWalk, PersonSimpleHike, Tree, Bicycle, PersonSimpleSwim, Medal, Boat, Steps, Path,
-  Barbell, Lightning, Flame, Timer, Heartbeat, FlowerLotus, PersonSimpleTaiChi, PersonArmsSpread, Person,
-  Mountains, Lifebuoy, Sailboat, Waves, Wind, PersonSimpleSki, PersonSimpleSnowboard, Sneaker,
+  SneakerMove, Path, MonitorPlay, Footprints, Boot, Backpack, WheelchairMotion, Medal, Bicycle, Mountains, Compass, Monitor, Lightning, BatteryCharging, Wheelchair, Car, Barbell, HandFist, Pulse, Timer, ChartLine, Target, Infinity, Steps, Equalizer, FlowerLotus, YinYang, Spiral, ArrowsOutLineHorizontal, Bandaids, TennisBall, Racquet, PingPong, SwimmingPool, Boat, Television, Lifebuoy, Anchor, Drop, Waves, Wind, Island, Sailboat, Snowflake, Tree, CloudSnow, Sneaker, SoccerBall, Basketball, Volleyball, Baseball, Hockey, Disc, Golf, MusicNotes,
 } from "@phosphor-icons/react";
+import { PadelIcon, PickleballIcon, SquashIcon, ShuttlecockIcon, type SportIconType } from "./sportIcons";
 
 export const img = {
   dawnRoad: "/img/dawn.jpg",
@@ -19,39 +18,80 @@ export const collage = [
   ["/img/ride-sq.jpg", "/img/lift.jpg", "/img/stairs.jpg", "/img/tennis.jpg"],
 ];
 
-export type Group = "Endurance" | "Strength" | "Adventure";
-export const groupLabel: Record<Group, string> = { Endurance: "Endurance & outdoor", Strength: "Strength & fitness", Adventure: "Adventure" };
-export type Activity = { id: string; name: string; group: Group; Icon: typeof PersonSimpleRun; unit: string };
+export type Group = "Endurance" | "Cycling" | "Strength" | "Racket" | "Water" | "Snow" | "Team" | "Other";
+export const groupLabel: Record<Group, string> = {
+  Endurance: "Endurance & outdoor", Cycling: "Cycling", Strength: "Strength & fitness", Racket: "Racket sports",
+  Water: "Water sports", Snow: "Snow & ice", Team: "Team sports", Other: "Other sports",
+};
+export const groupOrder = Object.keys(groupLabel) as Group[];
+export type Activity = { id: string; name: string; group: Group; Icon: typeof SneakerMove | SportIconType; unit: string };
 
-// The 27 activities from the shipped app, in its three groups.
+// Every sport people log, grouped the way athletes think about them.
 export const activities: Activity[] = [
-  { id: "run", name: "Run", group: "Endurance", Icon: PersonSimpleRun, unit: "km" },
-  { id: "walk", name: "Walk", group: "Endurance", Icon: PersonSimpleWalk, unit: "km" },
-  { id: "hike", name: "Hike", group: "Endurance", Icon: PersonSimpleHike, unit: "km" },
-  { id: "trek", name: "Trekking", group: "Endurance", Icon: Tree, unit: "km" },
-  { id: "cycle", name: "Cycling", group: "Endurance", Icon: Bicycle, unit: "km" },
-  { id: "swim", name: "Swimming", group: "Endurance", Icon: PersonSimpleSwim, unit: "km" },
+  { id: "run", name: "Run", group: "Endurance", Icon: SneakerMove, unit: "km" },
+  { id: "trail", name: "Trail run", group: "Endurance", Icon: Path, unit: "km" },
+  { id: "vrun", name: "Virtual run", group: "Endurance", Icon: MonitorPlay, unit: "km" },
+  { id: "walk", name: "Walk", group: "Endurance", Icon: Footprints, unit: "km" },
+  { id: "hike", name: "Hike", group: "Endurance", Icon: Boot, unit: "km" },
+  { id: "trek", name: "Trekking", group: "Endurance", Icon: Backpack, unit: "km" },
+  { id: "wheelchair", name: "Wheelchair", group: "Endurance", Icon: WheelchairMotion, unit: "km" },
   { id: "tri", name: "Triathlon", group: "Endurance", Icon: Medal, unit: "races" },
-  { id: "row", name: "Rowing", group: "Endurance", Icon: Boat, unit: "km" },
-  { id: "stairs", name: "Stair climbing", group: "Endurance", Icon: Steps, unit: "floors" },
-  { id: "trail", name: "Trail running", group: "Endurance", Icon: Path, unit: "km" },
+  { id: "cycle", name: "Ride", group: "Cycling", Icon: Bicycle, unit: "km" },
+  { id: "mtb", name: "Mountain bike ride", group: "Cycling", Icon: Mountains, unit: "km" },
+  { id: "gravel", name: "Gravel ride", group: "Cycling", Icon: Compass, unit: "km" },
+  { id: "vride", name: "Virtual ride", group: "Cycling", Icon: Monitor, unit: "km" },
+  { id: "ebike", name: "E-bike ride", group: "Cycling", Icon: Lightning, unit: "km" },
+  { id: "emtb", name: "E-mountain bike ride", group: "Cycling", Icon: BatteryCharging, unit: "km" },
+  { id: "handcycle", name: "Handcycle", group: "Cycling", Icon: Wheelchair, unit: "km" },
+  { id: "velomobile", name: "Velomobile", group: "Cycling", Icon: Car, unit: "km" },
   { id: "weights", name: "Weight training", group: "Strength", Icon: Barbell, unit: "workouts" },
-  { id: "strength", name: "Strength training", group: "Strength", Icon: Lightning, unit: "workouts" },
-  { id: "workout", name: "Workout", group: "Strength", Icon: Flame, unit: "workouts" },
+  { id: "strength", name: "Strength training", group: "Strength", Icon: HandFist, unit: "workouts" },
+  { id: "workout", name: "Workout", group: "Strength", Icon: Pulse, unit: "workouts" },
   { id: "hiit", name: "HIIT", group: "Strength", Icon: Timer, unit: "workouts" },
-  { id: "functional", name: "Functional training", group: "Strength", Icon: Heartbeat, unit: "workouts" },
+  { id: "crossfit", name: "CrossFit", group: "Strength", Icon: ChartLine, unit: "workouts" },
+  { id: "functional", name: "Functional training", group: "Strength", Icon: Target, unit: "workouts" },
+  { id: "elliptical", name: "Elliptical", group: "Strength", Icon: Infinity, unit: "workouts" },
+  { id: "stairs", name: "Stair climbing", group: "Strength", Icon: Steps, unit: "floors" },
+  { id: "stepper", name: "Stair stepper", group: "Strength", Icon: Equalizer, unit: "workouts" },
   { id: "yoga", name: "Yoga", group: "Strength", Icon: FlowerLotus, unit: "sessions" },
-  { id: "pilates", name: "Pilates", group: "Strength", Icon: PersonSimpleTaiChi, unit: "sessions" },
-  { id: "mobility", name: "Mobility", group: "Strength", Icon: PersonArmsSpread, unit: "sessions" },
-  { id: "stretch", name: "Stretching", group: "Strength", Icon: Person, unit: "sessions" },
-  { id: "climb", name: "Climbing", group: "Adventure", Icon: Mountains, unit: "routes" },
-  { id: "kayak", name: "Kayaking", group: "Adventure", Icon: Lifebuoy, unit: "km" },
-  { id: "canoe", name: "Canoeing", group: "Adventure", Icon: Sailboat, unit: "km" },
-  { id: "surf", name: "Surfing", group: "Adventure", Icon: Waves, unit: "sessions" },
-  { id: "paddle", name: "Paddleboarding", group: "Adventure", Icon: Wind, unit: "km" },
-  { id: "ski", name: "Skiing", group: "Adventure", Icon: PersonSimpleSki, unit: "km" },
-  { id: "snowboard", name: "Snowboarding", group: "Adventure", Icon: PersonSimpleSnowboard, unit: "sessions" },
-  { id: "skate", name: "Skating", group: "Adventure", Icon: Sneaker, unit: "km" },
+  { id: "pilates", name: "Pilates", group: "Strength", Icon: YinYang, unit: "sessions" },
+  { id: "mobility", name: "Mobility", group: "Strength", Icon: Spiral, unit: "sessions" },
+  { id: "stretch", name: "Stretching", group: "Strength", Icon: ArrowsOutLineHorizontal, unit: "sessions" },
+  { id: "physio", name: "Physiotherapy", group: "Strength", Icon: Bandaids, unit: "sessions" },
+  { id: "tennis", name: "Tennis", group: "Racket", Icon: TennisBall, unit: "sessions" },
+  { id: "padel", name: "Padel", group: "Racket", Icon: PadelIcon, unit: "sessions" },
+  { id: "pickleball", name: "Pickleball", group: "Racket", Icon: PickleballIcon, unit: "sessions" },
+  { id: "squash", name: "Squash", group: "Racket", Icon: SquashIcon, unit: "sessions" },
+  { id: "racquetball", name: "Racquetball", group: "Racket", Icon: Racquet, unit: "sessions" },
+  { id: "badminton", name: "Badminton", group: "Racket", Icon: ShuttlecockIcon, unit: "sessions" },
+  { id: "tabletennis", name: "Table tennis", group: "Racket", Icon: PingPong, unit: "sessions" },
+  { id: "swim", name: "Swim", group: "Water", Icon: SwimmingPool, unit: "km" },
+  { id: "row", name: "Rowing", group: "Water", Icon: Boat, unit: "km" },
+  { id: "vrow", name: "Virtual row", group: "Water", Icon: Television, unit: "km" },
+  { id: "kayak", name: "Kayaking", group: "Water", Icon: Lifebuoy, unit: "km" },
+  { id: "canoe", name: "Canoeing", group: "Water", Icon: Anchor, unit: "km" },
+  { id: "paddle", name: "Stand-up paddling", group: "Water", Icon: Drop, unit: "km" },
+  { id: "surf", name: "Surfing", group: "Water", Icon: Waves, unit: "sessions" },
+  { id: "windsurf", name: "Windsurfing", group: "Water", Icon: Wind, unit: "sessions" },
+  { id: "kitesurf", name: "Kitesurfing", group: "Water", Icon: Island, unit: "sessions" },
+  { id: "sail", name: "Sailing", group: "Water", Icon: Sailboat, unit: "km" },
+  { id: "ski", name: "Alpine ski", group: "Snow", Icon: Snowflake, unit: "km" },
+  { id: "nordic", name: "Nordic ski", group: "Snow", Icon: Tree, unit: "km" },
+  { id: "backcountry", name: "Backcountry ski", group: "Snow", Icon: Mountains, unit: "km" },
+  { id: "snowboard", name: "Snowboard", group: "Snow", Icon: CloudSnow, unit: "sessions" },
+  { id: "snowshoe", name: "Snowshoe", group: "Snow", Icon: Boot, unit: "km" },
+  { id: "iceskate", name: "Ice skating", group: "Snow", Icon: Sneaker, unit: "sessions" },
+  { id: "football", name: "Football (soccer)", group: "Team", Icon: SoccerBall, unit: "sessions" },
+  { id: "basketball", name: "Basketball", group: "Team", Icon: Basketball, unit: "sessions" },
+  { id: "volleyball", name: "Volleyball", group: "Team", Icon: Volleyball, unit: "sessions" },
+  { id: "cricket", name: "Cricket", group: "Team", Icon: Baseball, unit: "sessions" },
+  { id: "hockey", name: "Hockey", group: "Team", Icon: Hockey, unit: "sessions" },
+  { id: "climb", name: "Rock climbing", group: "Other", Icon: Mountains, unit: "routes" },
+  { id: "skate", name: "Inline skating", group: "Other", Icon: Sneaker, unit: "km" },
+  { id: "rollerski", name: "Roller ski", group: "Other", Icon: Path, unit: "km" },
+  { id: "skateboard", name: "Skateboarding", group: "Other", Icon: Disc, unit: "sessions" },
+  { id: "golf", name: "Golf", group: "Other", Icon: Golf, unit: "sessions" },
+  { id: "dance", name: "Dance", group: "Other", Icon: MusicNotes, unit: "sessions" },
 ];
 export const byId = (id: string) => activities.find((a) => a.id === id)!;
 

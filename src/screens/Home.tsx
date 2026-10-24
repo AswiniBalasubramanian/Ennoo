@@ -1,5 +1,6 @@
-import { motion } from "motion/react";
-import { Bell, PencilSimple, Plus, MapPin, CaretRight, Flag, Trophy, Quotes } from "@phosphor-icons/react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Bell, PencilSimple, Plus, MapPin, CaretRight, Flag, Trophy, Quotes, X } from "@phosphor-icons/react";
 import { StatusBar, Wordmark, Ring, SportIcon, type Route } from "../components";
 import { athlete, goal as kavyaGoal, otherGoals, entries, week, locations, bests, byId } from "../data";
 import type { Profile } from "./Onboarding";
@@ -41,6 +42,8 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
   const perWeek = (g.target - g.current) / (g.daysLeft / 7);
   const motto = profile ? profile.motto : "Consistency beats intensity.";
   const activity = byId(fresh ? profile.activity : kavyaGoal.activity);
+  // Pro is offered here, after they've seen their goal live, never as a gate between the goal card and the app
+  const [proOffer, setProOffer] = useState(fresh);
 
   return (
     <div className="body">
@@ -78,6 +81,20 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
       </section>
 
       <div className="pad" style={{ paddingBottom: 120, marginTop: -28, position: "relative" }}>
+
+        <AnimatePresence>
+          {proOffer && (
+            <motion.div key="pro" className="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+              style={{ position: "relative", padding: "16px 16px 16px 18px", marginBottom: 8, overflow: "hidden" }}>
+              <p style={{ fontSize: 15, fontWeight: 600, paddingRight: 36 }}>Pace every week to {fmt(g.target)} {g.unit}</p>
+              <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45, paddingRight: 8 }}>Pro adds deadline projections, all-time bests and every sport. Free for 15 days.</p>
+              <button className="btn btn-blue" onClick={() => go("pro")} style={{ height: 44, marginTop: 12, padding: "0 18px", fontSize: 15 }}>See Pro plans</button>
+              <button className="icon-btn" aria-label="Dismiss Pro offer" onClick={() => setProOffer(false)}
+                style={{ position: "absolute", top: 6, right: 6, border: 0, background: "transparent", color: "var(--gray)" }}><X size={18} /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Other goals */}
         <div className="sec"><h2 className="h2">Other goals</h2>{!fresh && <span className="cap">{otherGoals.length} active</span>}</div>

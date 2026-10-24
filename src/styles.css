@@ -26,7 +26,7 @@
 
   --ink: #0b1220;
   --gray: #667085;
-  --gray-2: #98a2b3;
+  --gray-2: #98a2b3; /* decoration only (chevrons, disabled days): 2.6:1 on white, too light for text */
   --line: #e7eaf0;
   --bg: #f4f6f9;
   --white: #ffffff;
@@ -37,9 +37,9 @@
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --font: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --display: "Instrument Sans Variable", "Inter Variable", sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
   --signature: "Signaturex", "Mrs Saint Delafield", cursive;
+  --sport: "Archivo Variable", "Arial Narrow", sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -191,7 +191,7 @@ input, textarea { font: inherit; color: inherit; }
   background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px);
   border-top: 1px solid var(--line);
 }
-.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; font-size: 11px; font-weight: 500; color: var(--gray-2); transition: color .2s; }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; font-size: 11px; font-weight: 500; color: var(--gray); transition: color .2s; }
 .tab[aria-current="page"] { color: var(--blue); }
 .record-fab {
   width: 56px; height: 56px; border-radius: 50%;
@@ -211,7 +211,7 @@ input, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--line); background: var(--white); font-size: 16px; color: var(--ink);
   transition: border-color .2s, box-shadow .2s; outline: none;
 }
-.input::placeholder { color: var(--gray-2); }
+.input::placeholder { color: var(--gray); opacity: 0.85; }
 .input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-50); }
 .input[aria-invalid="true"] { border-color: #d92d20; box-shadow: 0 0 0 4px #fef3f2; }
 .help { font-size: 13px; color: var(--gray); }
@@ -220,19 +220,40 @@ input, textarea { font: inherit; color: inherit; }
 /* ---------- Section header ---------- */
 .sec { display: flex; justify-content: space-between; align-items: baseline; margin: 32px 0 12px; }
 
-/* Headings use Instrument Serif; body copy, labels and numbers stay in Inter.
-   It ships in one weight, so weight is pinned to 400 (no faux bold), and
-   font-size-adjust matches its x-height to Inter so sizes read as designed. */
-h1, h2, h3, .title, .h2, blockquote {
+/* Headings use Archivo, bold and condensed, in sentence case: an athletic display voice that stays friendly.
+   Body copy, labels and numbers stay in Inter. Pull quotes keep Instrument Serif. */
+h1, h2, h3, .title, .h2 {
+  font-family: var(--sport);
+  font-weight: 620 !important;
+  font-stretch: 72%;
+  font-size-adjust: none;
+  letter-spacing: 0.004em !important;
+  word-spacing: 0.08em;
+  line-height: 1.02;
+}
+blockquote {
   font-family: var(--serif);
   font-weight: 400 !important;
   font-size-adjust: 0.5;
   letter-spacing: -0.01em !important;
   line-height: 1.1;
 }
-.title { padding-bottom: 2px; text-wrap: balance; }
-/* Small section labels read as UI, so they stay in Inter. */
+.title { padding-bottom: 2px; text-wrap: balance; font-size: 30px; }
+
+/* athletic display headline: Archivo, heavy and condensed, set in caps */
+.sport-title {
+  font-family: var(--sport);
+  font-weight: 760 !important;
+  font-stretch: 62%;
+  font-size-adjust: none;
+  letter-spacing: 0.012em !important;
+  text-transform: uppercase;
+  line-height: 0.98;
+}
+/* Small section labels read as UI, so they stay in Inter, in sentence case. */
 .sec .h2, .sec h2 {
+  text-transform: none;
+  font-stretch: 100%;
   font-family: var(--font, "Inter Variable", Inter, system-ui, sans-serif);
   font-weight: 600 !important;
   font-size: 15px;
@@ -255,12 +276,12 @@ h1, h2, h3, .title, .h2, blockquote {
 .btn-blue[aria-busy="true"] { background: linear-gradient(180deg, #1a66ff 0%, var(--blue) 100%); opacity: 0.9; cursor: progress; }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
 
-/* Instrument Serif for entry-flow titles (one weight only, so size does the work) */
-.serif-title { font-size: 34px; }
+/* entry-flow titles, a step larger than in-app titles */
+.serif-title { font-size: 32px; }
 
 /* Duotone sport icons: ink line, blue gradient fill */
 .duo-icon { color: var(--ink); }
-.duo-icon path[opacity="0.2"] { fill: url(#duo-grad); opacity: 0.75; }
+.duo-icon [opacity="0.2"] { fill: url(#duo-grad); opacity: 0.75; }
 
 /* Film grain for photo surfaces (static, so it costs nothing per frame) */
 .grain {
@@ -285,3 +306,12 @@ input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webki
   src: url("/fonts/signaturex.woff2") format("woff2"), url("/fonts/signaturex.otf") format("opentype"), url("/fonts/signaturex.ttf") format("truetype");
   font-display: swap;
 }
+
+/* splash: the light that travels through ENN (drives the SVG mask in Splash.tsx) */
+@keyframes enn-sweep {
+  from { transform: translateX(-260px); }
+  to { transform: translateX(1240px); }
+}
+
+/* typed numbers: a soft brand selection instead of the system's heavy blue block */
+.num-input::selection { background: var(--blue-100); color: var(--ink); }

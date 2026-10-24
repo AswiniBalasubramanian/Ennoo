@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { WORD } from "./wordmark";
+import type { SportIconType } from "./sportIcons";
 import {
   CellSignalFull, WifiHigh, BatteryFull,
   House, MagnifyingGlass, ClockCounterClockwise, UserCircle, Plus, ArrowLeft,
@@ -156,7 +157,8 @@ export function AuthHeader({ onBack }: { onBack: () => void }) {
   Sport icons: ink outline + blue gradient duotone fill; the selected one goes solid blue.
   The gradient lives once in <IconDefs/>; CSS paints Phosphor's 20%-opacity duotone layer with it.
 */
-export function SportIcon({ Icon, size = 24, selected = false }: { Icon: typeof House; size?: number; selected?: boolean }) {
+export function SportIcon({ Icon, size = 24, selected = false }: { Icon: typeof House | SportIconType; size?: number; selected?: boolean }) {
+  // the sport's object (shoe, bike, racket) in duotone: ink line with the blue gradient fill; solid blue when chosen
   return selected
     ? <Icon size={size} weight="fill" color="var(--blue)" />
     : <Icon size={size} weight="duotone" className="duo-icon" />;

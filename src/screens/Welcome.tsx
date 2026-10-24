@@ -13,7 +13,12 @@ const rise = (d: number) => ({
   Runners photo = atmosphere. Three rows of sport photos drift in alternate directions over it,
   graded vivid so mixed stock reads as one set, and dissolve into deep blue before the headline.
 */
-function Row({ photos, dir, delay, still }: { photos: string[]; dir: 1 | -1; delay: number; still: boolean }) {
+/* a loose rhythm of shapes, all 88px tall: circles, pills, rounded squares and rectangles.
+   Each row starts at a different point so no two rows line up. */
+const TILES = [
+  { w: 88, r: 44 }, { w: 128, r: 18 }, { w: 88, r: 18 }, { w: 128, r: 44 }, { w: 88, r: 44 }, { w: 104, r: 18 }, { w: 128, r: 44 }, { w: 88, r: 18 },
+];
+function Row({ photos, dir, delay, still, seed }: { photos: string[]; dir: 1 | -1; delay: number; still: boolean; seed: number }) {
   const strip = [...photos, ...photos, ...photos];
   return (
     <motion.div initial={{ opacity: 0, x: dir * 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay, ease: [0.16, 1, 0.3, 1] }} style={{ overflow: "hidden" }}>
@@ -23,9 +28,10 @@ function Row({ photos, dir, delay, still }: { photos: string[]; dir: 1 | -1; del
         animate={still ? undefined : { x: dir === 1 ? ["0%", "-33.333%"] : ["-33.333%", "0%"] }}
         transition={{ duration: 38 + delay * 20, repeat: Infinity, ease: "linear" }}
       >
-        {strip.map((src, i) => (
-          <img key={i} src={src} alt="" aria-hidden className="pill-photo" style={{ width: i % 3 === 1 ? 128 : 88 }} />
-        ))}
+        {strip.map((src, i) => {
+          const t = TILES[(i + seed) % TILES.length];
+          return <img key={i} src={src} alt="" aria-hidden className="pill-photo" style={{ width: t.w, borderRadius: t.r }} />;
+        })}
       </motion.div>
     </motion.div>
   );
@@ -54,7 +60,7 @@ export default function Welcome({ go }: { go: (r: Route) => void }) {
       <div aria-hidden style={{ position: "absolute", top: 112, left: 0, right: 0, display: "grid", gap: 8,
         WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 62%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%)",
         WebkitMaskComposite: "source-in", maskImage: "linear-gradient(180deg, #000 0%, #000 62%, transparent 100%), linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%)", maskComposite: "intersect" }}>
-        {collage.map((row, i) => <Row key={i} photos={row} dir={i % 2 ? -1 : 1} delay={reduce ? 0 : 1.0 + i * 0.15} still={!!reduce} />)}
+        {collage.map((row, i) => <Row key={i} photos={row} dir={i % 2 ? -1 : 1} delay={reduce ? 0 : 1.0 + i * 0.15} still={!!reduce} seed={i * 3} />)}
       </div>
 
       <motion.div {...rise(0.3)} style={{ position: "absolute", top: 66, left: 24 }}>
@@ -62,8 +68,9 @@ export default function Welcome({ go }: { go: (r: Route) => void }) {
       </motion.div>
 
       <div style={{ position: "absolute", left: 24, right: 24, bottom: 28 }}>
-        <motion.h1 {...rise(reduce ? 0 : 1.6)} style={{ fontFamily: "var(--serif)", fontWeight: 400, fontSizeAdjust: "none", fontSize: 41, lineHeight: 1.04, paddingBottom: 4 }}>
-          Your Activities.<br /><em>Remembered Forever.</em>
+        {/* athletic display: heavy, condensed, the second line leaning forward like the wordmark */}
+        <motion.h1 {...rise(reduce ? 0 : 1.6)} className="sport-title" style={{ fontSize: 38, paddingBottom: 2 }}>
+          <span style={{ color: "rgba(255,255,255,0.82)" }}>Your activities.</span><br /><em style={{ fontStyle: "italic", color: "#fff" }}>Remembered forever.</em>
         </motion.h1>
         <motion.p {...rise(reduce ? 0 : 1.75)} style={{ marginTop: 14, fontSize: 16, lineHeight: 1.5, color: "rgba(255,255,255,0.72)", maxWidth: "30ch" }}>
           Track, understand and keep everything you do, in one place.
