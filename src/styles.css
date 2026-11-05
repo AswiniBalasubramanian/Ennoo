@@ -36,10 +36,8 @@
   --float: 0 1px 2px rgba(11, 18, 32, 0.04), 0 12px 32px -12px rgba(0, 44, 138, 0.18);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --font: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --serif: "Instrument Serif", Georgia, serif;
-  --signature: "Signaturex", "Mrs Saint Delafield", cursive;
-  --sport: "Archivo Variable", "Arial Narrow", sans-serif;
+  --font: "DM Sans Variable", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --signature: "DM Mono", ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,7 +47,6 @@ body {
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a, open digits */
 }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 input, textarea { font: inherit; color: inherit; }
@@ -78,6 +75,12 @@ input, textarea { font: inherit; color: inherit; }
 .screen-list button:hover { color: var(--ink); background: rgba(255, 255, 255, 0.6); }
 .screen-list button[aria-current="true"] { background: var(--white); color: var(--ink); box-shadow: var(--float); }
 .screen-list span:last-child { font-size: 12px; color: var(--gray-2); }
+.sound-toggle {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  padding: 8px 14px; border-radius: 999px; font-size: 13px; color: var(--gray);
+  border: 1px solid var(--line); transition: background .2s, color .2s;
+}
+.sound-toggle:hover, .sound-toggle[aria-pressed="true"] { color: var(--ink); background: rgba(255, 255, 255, 0.6); }
 
 .phone {
   position: relative;
@@ -220,41 +223,35 @@ input, textarea { font: inherit; color: inherit; }
 /* ---------- Section header ---------- */
 .sec { display: flex; justify-content: space-between; align-items: baseline; margin: 32px 0 12px; }
 
-/* Headings use Archivo, bold and condensed, in sentence case: an athletic display voice that stays friendly.
-   Body copy, labels and numbers stay in Inter. Pull quotes keep Instrument Serif. */
+/* One family throughout: headings are DM Sans too, bolder and tightly tracked, in sentence case. Pull quotes are DM Sans italic. */
 h1, h2, h3, .title, .h2 {
-  font-family: var(--sport);
-  font-weight: 620 !important;
-  font-stretch: 72%;
+  font-family: var(--font);
+  font-weight: 650 !important;
   font-size-adjust: none;
-  letter-spacing: 0.004em !important;
-  word-spacing: 0.08em;
-  line-height: 1.02;
-}
-blockquote {
-  font-family: var(--serif);
-  font-weight: 400 !important;
-  font-size-adjust: 0.5;
-  letter-spacing: -0.01em !important;
+  letter-spacing: -0.015em !important;
   line-height: 1.1;
 }
-.title { padding-bottom: 2px; text-wrap: balance; font-size: 30px; }
-
-/* athletic display headline: Archivo, heavy and condensed, set in caps */
-.sport-title {
-  font-family: var(--sport);
-  font-weight: 760 !important;
-  font-stretch: 62%;
-  font-size-adjust: none;
-  letter-spacing: 0.012em !important;
-  text-transform: uppercase;
-  line-height: 0.98;
+blockquote {
+  font-family: var(--font);
+  font-style: italic;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.25;
 }
-/* Small section labels read as UI, so they stay in Inter, in sentence case. */
+.title { padding-bottom: 2px; text-wrap: balance; font-size: 24px; }
+
+/* Welcome headline: the same DM Sans, heavier and larger, in sentence case */
+.sport-title {
+  font-family: var(--font);
+  font-weight: 700 !important;
+  font-size-adjust: none;
+  letter-spacing: -0.02em !important;
+  line-height: 1.08;
+}
+/* Small section labels read as UI, so they stay at body weight, in sentence case. */
 .sec .h2, .sec h2 {
   text-transform: none;
-  font-stretch: 100%;
-  font-family: var(--font, "Inter Variable", Inter, system-ui, sans-serif);
+  font-family: var(--font);
   font-weight: 600 !important;
   font-size: 15px;
   font-size-adjust: none;
@@ -277,11 +274,16 @@ blockquote {
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
 
 /* entry-flow titles, a step larger than in-app titles */
-.serif-title { font-size: 32px; }
+.serif-title { font-size: 24px; }
 
-/* Duotone sport icons: ink line, blue gradient fill */
+/* Sport icons, two tones like the Ennoo icon reference: an ink outline object with its
+   fill shapes (wheels, upper, water) in solid brand blue. Selected: the outline turns blue too. */
 .duo-icon { color: var(--ink); }
-.duo-icon [opacity="0.2"] { fill: url(#duo-grad); opacity: 0.75; }
+.duo-icon [opacity="0.2"] { fill: #4D86F7; opacity: 1; }
+.duo-icon.sel { color: var(--blue); }
+.duo-icon.sel [opacity="0.2"] { fill: #8DB4FF; }
+.duo-icon.neu, .duo-icon.neu.sel { color: var(--ink); }
+.duo-icon.neu [opacity="0.2"] { fill: currentColor; opacity: 0.16; }
 
 /* Film grain for photo surfaces (static, so it costs nothing per frame) */
 .grain {
@@ -299,19 +301,85 @@ blockquote {
 
 input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
 
-/* Signature script for the goal card. Signaturex is a licensed demo font, not bundled:
-   drop the file in public/fonts/ and it takes over; until then Mrs Saint Delafield stands in. */
-@font-face {
-  font-family: "Signaturex";
-  src: url("/fonts/signaturex.woff2") format("woff2"), url("/fonts/signaturex.otf") format("opentype"), url("/fonts/signaturex.ttf") format("truetype");
-  font-display: swap;
-}
-
 /* splash: the light that travels through ENN (drives the SVG mask in Splash.tsx) */
 @keyframes enn-sweep {
-  from { transform: translateX(-260px); }
-  to { transform: translateX(1240px); }
+  /* back to front: from the loop side of the word to the E */
+  from { transform: translateX(1300px); }
+  to { transform: translateX(-260px); }
+}
+/* the gradient fill follows the light into ENN and stays */
+@keyframes enn-fill {
+  from { transform: translateX(1450px); }
+  to { transform: translateX(-220px); }
 }
 
 /* typed numbers: a soft brand selection instead of the system's heavy blue block */
 .num-input::selection { background: var(--blue-100); color: var(--ink); }
+
+/* ---------- Goal set-up fields ---------- */
+/* number + unit in one box: the unit is a fixed suffix or a quiet select */
+.nf {
+  display: flex; align-items: center; height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--white);
+  transition: border-color .2s, box-shadow .2s; overflow: hidden;
+}
+.nf:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-50); }
+.nf[data-invalid="true"] { border-color: #d92d20; box-shadow: 0 0 0 4px #fef3f2; }
+.nf input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; padding: 0 14px; font-size: 18px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.nf input::placeholder { color: var(--gray-2); font-weight: 500; }
+.nf .sfx { padding-right: 14px; font-size: 14px; color: var(--gray); white-space: nowrap; }
+.nf select {
+  appearance: none; -webkit-appearance: none; height: 100%; border: 0; border-left: 1px solid var(--line); outline: none; cursor: pointer;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath d='M48 96l80 80 80-80' fill='none' stroke='%23667085' stroke-width='28' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  padding: 0 32px 0 14px; font-size: 15px; font-weight: 600; color: var(--ink);
+}
+.nf select:focus-visible { box-shadow: inset 0 0 0 2px var(--blue); }
+.umenu { height: 100%; }
+.umenu-btn { height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 14px 0 16px; border-left: 1px solid var(--line); background: var(--bg);
+  font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.umenu-btn svg { color: var(--gray); }
+.umenu-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--blue); }
+.umenu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 132px; padding: 6px; border-radius: 16px; background: var(--white);
+  border: 1px solid var(--line); box-shadow: 0 16px 40px -16px rgba(11,18,32,0.28); transform-origin: top right; outline: none; }
+.umenu-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 44px; padding: 0 12px; border-radius: 11px;
+  font-size: 15px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.umenu-opt[data-hi] { background: var(--bg); }
+.umenu-opt[aria-selected="true"] { color: var(--blue); font-weight: 600; }
+.flabel { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.flabel .opt { font-weight: 500; color: var(--gray); }
+
+/* two or three-way switch */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg); }
+.seg button { height: 38px; border-radius: 10px; font-size: 14px; font-weight: 560; color: var(--gray); transition: background .2s, color .2s, box-shadow .2s; }
+.seg button[aria-checked="true"] { background: var(--blue); color: #fff; box-shadow: 0 4px 10px -6px rgba(0,84,251,.6); }
+
+/* metric tiles */
+.mtile {
+  position: relative; display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 10px 14px 10px 10px;
+  border-radius: 18px; border: 1.5px solid var(--line); background: var(--white); text-align: left; transition: border-color .2s, background .2s, transform .15s;
+}
+.mtile:active { transform: scale(0.985); }
+.mtile[aria-checked="true"] { border-color: var(--blue); background: var(--blue-50); }
+.mtile b { font-size: 14px; font-weight: 600; color: var(--ink); }
+.mtile[aria-checked="true"] b { color: var(--blue); }
+.mtile small { font-size: 13px; color: var(--gray); }
+.mtile-ic { width: 44px; height: 44px; border-radius: 13px; background: var(--bg); display: grid; place-items: center; flex: none; transition: background .2s; }
+.mtile[aria-checked="true"] .mtile-ic { background: var(--white); }
+.mtile-tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.mtile b { font-size: 15px; }
+.mtile .radio { width: 22px; height: 22px; border-radius: 50%; flex: none; display: grid; place-items: center; border: 1.5px solid var(--gray-2); color: #fff; transition: all .2s; }
+.mtile[aria-checked="true"] .radio { background: var(--blue); border-color: var(--blue); }
+.tick { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; }
+
+.note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--bg); color: #344054; font-size: 13px; line-height: 1.45; }
+.note svg { flex: none; color: var(--gray); margin-top: 1px; }
+
+/* location: live GPS dot, the pulsing pin in the consent sheet, skeleton rows while searching */
+.gps-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px rgba(0, 84, 251, 0.18); flex: none; animation: gps-breathe 1.8s ease-in-out infinite; }
+@keyframes gps-breathe { 50% { box-shadow: 0 0 0 6px rgba(0, 84, 251, 0.06); } }
+.gps-pulse { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0, 84, 251, 0.45); }
+.gps-pulse::before, .gps-pulse::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; background: rgba(0, 84, 251, 0.25); animation: gps-ring 2s ease-out infinite; }
+.gps-pulse::after { animation-delay: 1s; }
+@keyframes gps-ring { from { transform: scale(1); opacity: 1; } to { transform: scale(5); opacity: 0; } }
+.skel { display: block; background: linear-gradient(90deg, var(--bg) 0%, #e9edf3 50%, var(--bg) 100%); background-size: 200% 100%; animation: skel 1.2s ease-in-out infinite; }
+@keyframes skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .gps-dot, .gps-pulse::before, .gps-pulse::after, .skel { animation: none; } }

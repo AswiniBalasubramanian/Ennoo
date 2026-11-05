@@ -1,11 +1,14 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { bind, setEnabled, unlock } from "cuelume";
+import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import { TabBar, Wordmark, IconDefs, type Route } from "./components";
 import Splash from "./screens/Splash";
 import Welcome from "./screens/Welcome";
 import Signup from "./screens/Signup";
 import Login from "./screens/Login";
 import Onboarding, { type Profile as ProfileData } from "./screens/Onboarding";
+import Hello from "./screens/Hello";
 import Home from "./screens/Home";
 import Pro from "./screens/Pro";
 import Search from "./screens/Search";
@@ -18,8 +21,9 @@ const screens: { id: Route; name: string; note: string }[] = [
   { id: "splash", name: "Splash", note: "Launch" },
   { id: "welcome", name: "Welcome", note: "First open" },
   { id: "login", name: "Log in", note: "Returning member" },
-  { id: "signup", name: "Create account", note: "Sign up" },
+  { id: "signup", name: "Sign up", note: "You, phone, OTP" },
   { id: "onboarding", name: "Onboarding", note: "4 steps + goal card" },
+  { id: "hello", name: "Hello", note: "Goal created" },
   { id: "pro", name: "Ennoo Pro", note: "Plans and trial" },
   { id: "home", name: "Home", note: "Goal and week" },
   { id: "search", name: "Search", note: "Find anything" },
@@ -43,6 +47,10 @@ export default function App() {
   const [firstName, setFirstName] = useState("");
   const go = useCallback((r: Route) => { setRoute(r); history.replaceState(null, "", `#${r}`); }, []);
   const [handedOff, setHandedOff] = useState(false);
+  // interaction sounds: every data-cuelume-* control in the app, delegated from one listener
+  useEffect(() => bind(), []);
+  const [sound, setSound] = useState(true);
+  const toggleSound = () => { const on = !sound; setSound(on); setEnabled(on); if (on) void unlock(); };
   const leaveSplash = useCallback((r: Route) => {
     // first splash goes to the deep-linked screen; any later splash (from the screen list) goes to Welcome
     go(handedOff ? r : after);
@@ -54,7 +62,8 @@ export default function App() {
     welcome: <Welcome go={go} />,
     login: <Login go={go} />,
     signup: <Signup go={go} onName={setFirstName} />,
-    onboarding: <Onboarding go={go} name={firstName} initialStep={obStep} onDone={(p) => { setProfile(p); go("home"); }} />,
+    onboarding: <Onboarding go={go} name={firstName} initialStep={obStep} onDone={(p) => { setProfile(p); go("hello"); }} />,
+    hello: <Hello go={go} profile={profile} />,
     pro: <Pro go={go} />,
     home: <Home go={go} profile={profile} />,
     search: <Search go={go} />,
@@ -73,11 +82,14 @@ export default function App() {
           <p>Interactive prototype. Tap through the phone, or jump to any screen. Finishing onboarding shows Home as a new member; "I already have an account" shows a returning one.</p>
           <nav className="screen-list" aria-label="Screens">
             {screens.map((s) => (
-              <button key={s.id} aria-current={route === s.id} onClick={() => { if (s.id === "home") setProfile(null); go(s.id); }}>
+              <button data-cuelume-navigate key={s.id} aria-current={route === s.id} onClick={() => { if (s.id === "home") setProfile(null); go(s.id); }}>
                 <span>{s.name}</span><span>{s.note}</span>
               </button>
             ))}
           </nav>
+          <button data-cuelume-toggle className="sound-toggle" aria-pressed={sound} onClick={toggleSound}>
+            {sound ? <SpeakerHigh size={16} /> : <SpeakerSlash size={16} />}Sound {sound ? "on" : "off"}
+          </button>
         </aside>
         <div className="phone">
           <div className="screen">

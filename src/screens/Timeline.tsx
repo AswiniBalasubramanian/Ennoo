@@ -16,7 +16,7 @@ function Item({ e, go, first }: { e: Entry; go: (r: Route) => void; first: boole
         <span style={{ position: "relative", marginTop: 14, width: 28, height: 28, borderRadius: "50%", background: "#fff", border: "1px solid var(--line)", color: "var(--blue)", display: "grid", placeItems: "center" }}><SportIcon Icon={A.Icon} size={16} /></span>
       </div>
       <article className="card" style={{ overflow: "hidden", marginBottom: 14 }}>
-        <button onClick={() => go("summary")} style={{ display: "block", width: "100%", textAlign: "left" }}>
+        <button data-cuelume-tap onClick={() => go("summary")} style={{ display: "block", width: "100%", textAlign: "left" }}>
           {e.photo && <img src={e.photo} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />}
           <div style={{ padding: "14px 16px 0" }}>
             <p className="cap">{e.when}</p>
@@ -30,7 +30,7 @@ function Item({ e, go, first }: { e: Entry; go: (r: Route) => void; first: boole
         <div style={{ padding: "12px 16px 16px" }}>
           {e.note
             ? <p style={{ fontSize: 14, lineHeight: 1.5, paddingLeft: 12, borderLeft: "2px solid var(--blue)" }}>{e.note}</p>
-            : <button className="link" onClick={() => go("summary")}><PencilSimpleLine size={15} />Add a note</button>}
+            : <button data-cuelume-tap data-cuelume-emphasis="subtle" className="link" onClick={() => go("summary")}><PencilSimpleLine size={15} />Add a note</button>}
         </div>
       </article>
     </div>
@@ -49,10 +49,10 @@ export default function Timeline({ go }: { go: (r: Route) => void }) {
           <h1 className="title">Timeline</h1>
           <p className="meta" style={{ marginTop: 4 }}>October, 5 activities so far</p>
         </div>
-        <button className="icon-btn" aria-label="Filter and sort"><SlidersHorizontal size={20} /></button>
+        <button data-cuelume-tap className="icon-btn" aria-label="Filter and sort"><SlidersHorizontal size={20} /></button>
       </header>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "18px 20px 6px", scrollbarWidth: "none" }}>
-        {filters.map((x) => <button key={x} className="chip" aria-pressed={f === x} onClick={() => setF(x)}>{x === "All" ? "All" : byId(x).name}</button>)}
+        {filters.map((x) => <button data-cuelume-select key={x} className="chip" aria-pressed={f === x} onClick={() => setF(x)}>{x === "All" ? "All" : byId(x).name}</button>)}
       </div>
       <div className="pad" style={{ paddingTop: 14, paddingBottom: 120 }}>
         <AnimatePresence mode="wait">

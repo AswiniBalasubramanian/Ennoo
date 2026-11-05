@@ -26,13 +26,13 @@ export default function Profile({ go, profile }: { go: (r: Route) => void; profi
     <div className="body">
       <StatusBar />
       <header className="pad top" style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button className="icon-btn" aria-label="Settings"><Gear size={20} /></button>
+        <button data-cuelume-tap className="icon-btn" aria-label="Settings"><Gear size={20} /></button>
       </header>
       <div className="pad" style={{ paddingBottom: 120 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 4 }}>
           <span style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--blue)", color: "#fff", display: "grid", placeItems: "center", fontSize: 26, fontWeight: 600 }}>KR</span>
           <div>
-            <h1 className="title" style={{ fontSize: 26 }}>{athlete.first} {athlete.last}</h1>
+            <h1 className="title" style={{ fontSize: 22 }}>{athlete.first} {athlete.last}</h1>
             <p className="meta" style={{ marginTop: 4 }}>{athlete.city}, on Ennoo since {athlete.since}</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function Profile({ go, profile }: { go: (r: Route) => void; profi
         <div className="sec"><h2 className="h2">Settings</h2></div>
         <div className="card" style={{ padding: "4px 18px" }}>
           {settings.map(({ I, l, v }, i) => (
-            <button key={l} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "15px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+            <button data-cuelume-tap key={l} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "15px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
               <I size={20} color="var(--gray)" />
               <span style={{ flex: 1, fontSize: 15 }}>{l}</span>
               <span className="cap" style={{ fontSize: 13 }}>{v}</span>
@@ -94,7 +94,7 @@ export default function Profile({ go, profile }: { go: (r: Route) => void; profi
             </button>
           ))}
         </div>
-        <button className="btn btn-soft" style={{ width: "100%", marginTop: 16 }} onClick={() => go("welcome")}><SignOut size={18} />Sign out</button>
+        <button data-cuelume-close className="btn btn-soft" style={{ width: "100%", marginTop: 16 }} onClick={() => go("welcome")}><SignOut size={18} />Sign out</button>
       </div>
     </div>
   );

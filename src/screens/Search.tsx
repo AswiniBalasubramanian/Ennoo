@@ -20,22 +20,22 @@ export default function Search({ go }: { go: (r: Route) => void }) {
         <h1 className="title">Search</h1>
         <div style={{ position: "relative", marginTop: 16 }}>
           <MagnifyingGlass size={18} color="var(--gray)" style={{ position: "absolute", left: 16, top: 18 }} />
-          <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Activities, places, notes" aria-label="Search" style={{ paddingLeft: 44, paddingRight: 44 }} />
-          {q && <button aria-label="Clear search" onClick={() => setQ("")} style={{ position: "absolute", right: 8, top: 7, width: 40, height: 40, display: "grid", placeItems: "center", color: "var(--gray)" }}><X size={18} /></button>}
+          <input data-cuelume-type className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Activities, places, notes" aria-label="Search" style={{ paddingLeft: 44, paddingRight: 44 }} />
+          {q && <button data-cuelume-close aria-label="Clear search" onClick={() => setQ("")} style={{ position: "absolute", right: 8, top: 7, width: 40, height: 40, display: "grid", placeItems: "center", color: "var(--gray)" }}><X size={18} /></button>}
         </div>
       </header>
 
       <div className="pad" style={{ paddingBottom: 120 }}>
         {!t ? (
           <>
-            <div className="sec"><h2 className="h2">Recent</h2><button className="link" style={{ color: "var(--gray)" }}>Clear</button></div>
+            <div className="sec"><h2 className="h2">Recent</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link" style={{ color: "var(--gray)" }}>Clear</button></div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {recent.map((r) => <button key={r} className="chip" onClick={() => setQ(r)}><ClockCounterClockwise size={15} />{r}</button>)}
+              {recent.map((r) => <button data-cuelume-tap key={r} className="chip" onClick={() => setQ(r)}><ClockCounterClockwise size={15} />{r}</button>)}
             </div>
             <div className="sec"><h2 className="h2">Browse by sport</h2></div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
               {activities.slice(0, 12).map(({ id, name, Icon }) => (
-                <button key={id} onClick={() => setQ(name)} style={{ display: "grid", justifyItems: "center", gap: 8, padding: "14px 4px", borderRadius: 18, background: "#fff", border: "1px solid var(--line)", fontSize: 12 }}>
+                <button data-cuelume-tap key={id} onClick={() => setQ(name)} style={{ display: "grid", justifyItems: "center", gap: 8, padding: "14px 4px", borderRadius: 18, background: "#fff", border: "1px solid var(--line)", fontSize: 12 }}>
                   <SportIcon Icon={Icon} size={26} />{name}
                 </button>
               ))}
@@ -55,7 +55,7 @@ export default function Search({ go }: { go: (r: Route) => void }) {
                   {hits.acts.map((e, i) => {
                     const A = byId(e.activity);
                     return (
-                      <button key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+                      <button data-cuelume-tap key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
                         <SportIcon Icon={A.Icon} size={20} />
                         <span style={{ flex: 1 }}><span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{e.title}</span><span className="cap">{e.when}</span></span>
                         <CaretRight size={16} color="var(--gray-2)" />
@@ -71,7 +71,7 @@ export default function Search({ go }: { go: (r: Route) => void }) {
                 <div className="card" style={{ padding: "4px 16px" }}>
                   {hits.places.map((l, i) => (
                     <div key={l.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
-                      <MapPin size={20} weight="fill" color="var(--blue)" />
+                      <MapPin size={20} weight="duotone" color="var(--ink)" />
                       <span style={{ flex: 1 }}><span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{l.name}</span><span className="cap">{l.count} {l.kind}</span></span>
                     </div>
                   ))}

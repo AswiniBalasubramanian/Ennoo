@@ -13,10 +13,11 @@ const rise = (d: number) => ({
   Runners photo = atmosphere. Three rows of sport photos drift in alternate directions over it,
   graded vivid so mixed stock reads as one set, and dissolve into deep blue before the headline.
 */
-/* a loose rhythm of shapes, all 88px tall: circles, pills, rounded squares and rectangles.
+/* a loose rhythm of shapes, all 100px tall: soft squircles and pills, cropped tight on the athlete.
    Each row starts at a different point so no two rows line up. */
+const TILE_H = 100;
 const TILES = [
-  { w: 88, r: 44 }, { w: 128, r: 18 }, { w: 88, r: 18 }, { w: 128, r: 44 }, { w: 88, r: 44 }, { w: 104, r: 18 }, { w: 128, r: 44 }, { w: 88, r: 18 },
+  { w: 132, r: 34 }, { w: 100, r: 50 }, { w: 120, r: 28 }, { w: 144, r: 50 }, { w: 104, r: 34 }, { w: 128, r: 28 }, { w: 100, r: 50 }, { w: 140, r: 34 },
 ];
 function Row({ photos, dir, delay, still, seed }: { photos: string[]; dir: 1 | -1; delay: number; still: boolean; seed: number }) {
   const strip = [...photos, ...photos, ...photos];
@@ -30,7 +31,7 @@ function Row({ photos, dir, delay, still, seed }: { photos: string[]; dir: 1 | -
       >
         {strip.map((src, i) => {
           const t = TILES[(i + seed) % TILES.length];
-          return <img key={i} src={src} alt="" aria-hidden className="pill-photo" style={{ width: t.w, borderRadius: t.r }} />;
+          return <img key={i} src={src} alt="" aria-hidden className="pill-photo" style={{ width: t.w, height: TILE_H, borderRadius: t.r }} />;
         })}
       </motion.div>
     </motion.div>
@@ -68,16 +69,16 @@ export default function Welcome({ go }: { go: (r: Route) => void }) {
       </motion.div>
 
       <div style={{ position: "absolute", left: 24, right: 24, bottom: 28 }}>
-        {/* athletic display: heavy, condensed, the second line leaning forward like the wordmark */}
-        <motion.h1 {...rise(reduce ? 0 : 1.6)} className="sport-title" style={{ fontSize: 38, paddingBottom: 2 }}>
-          <span style={{ color: "rgba(255,255,255,0.82)" }}>Your activities.</span><br /><em style={{ fontStyle: "italic", color: "#fff" }}>Remembered forever.</em>
+        {/* bold upright headline; the second line is highlighted in full white */}
+        <motion.h1 {...rise(reduce ? 0 : 1.6)} className="sport-title" style={{ fontSize: 34, paddingBottom: 2 }}>
+          <span style={{ color: "rgba(255,255,255,0.82)" }}>Your activities.</span><br /><span style={{ color: "#fff" }}>Remembered forever.</span>
         </motion.h1>
         <motion.p {...rise(reduce ? 0 : 1.75)} style={{ marginTop: 14, fontSize: 16, lineHeight: 1.5, color: "rgba(255,255,255,0.72)", maxWidth: "30ch" }}>
           Track, understand and keep everything you do, in one place.
         </motion.p>
         <motion.div {...rise(reduce ? 0 : 1.9)} style={{ display: "grid", gap: 6, marginTop: 28 }}>
-          <button className="btn btn-blue" onClick={() => go("signup")}>Get started</button>
-          <button className="btn" style={{ color: "rgba(255,255,255,0.86)", fontWeight: 500 }} onClick={() => go("login")}>I'm already a member</button>
+          <button data-cuelume-tap className="btn btn-blue" onClick={() => go("signup")}>Get started</button>
+          <button data-cuelume-tap className="btn" style={{ color: "rgba(255,255,255,0.86)", fontWeight: 500 }} onClick={() => go("login")}>I'm already a member</button>
         </motion.div>
       </div>
     </div>

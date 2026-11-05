@@ -6,7 +6,7 @@ import {
   House, MagnifyingGlass, ClockCounterClockwise, UserCircle, Plus, ArrowLeft,
 } from "@phosphor-icons/react";
 
-export type Route = "splash" | "welcome" | "login" | "signup" | "onboarding" | "pro" | "home" | "search" | "record" | "summary" | "timeline" | "profile";
+export type Route = "splash" | "welcome" | "login" | "signup" | "onboarding" | "hello" | "pro" | "home" | "search" | "record" | "summary" | "timeline" | "profile";
 
 export function StatusBar({ onBlue = false }: { onBlue?: boolean }) {
   return (
@@ -51,7 +51,7 @@ export function TabBar({ route, go }: { route: Route; go: (r: Route) => void }) 
   const Tab = ({ id, label, Icon }: (typeof tabs)[number]) => {
     const on = route === id;
     return (
-      <button className="tab" aria-current={on ? "page" : undefined} onClick={() => go(id)}>
+      <button data-cuelume-navigate className="tab" aria-current={on ? "page" : undefined} onClick={() => go(id)}>
         <Icon size={24} weight={on ? "fill" : "regular"} />
         {label}
       </button>
@@ -61,7 +61,7 @@ export function TabBar({ route, go }: { route: Route; go: (r: Route) => void }) 
     <nav className="tabbar" aria-label="Main">
       {tabs.slice(0, 2).map((t) => <Tab key={t.id} {...t} />)}
       <div style={{ display: "grid", placeItems: "center" }}>
-        <button className="record-fab" aria-label="Record an activity" onClick={() => go("record")}>
+        <button data-cuelume-open className="record-fab" aria-label="Record an activity" onClick={() => go("record")}>
           <Plus size={26} weight="bold" />
         </button>
       </div>
@@ -116,7 +116,7 @@ export function RouteMap({ tone = "light", draw = true, height = 200, markers = 
           {markers && kms.map(([x, y, t], i) => (
             <motion.g key={t} initial={draw ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ delay: 0.6 + i * 0.2 }}>
               <circle cx={x} cy={y} r="9.5" fill={pill.fill} />
-              <text x={x} y={y + 3.6} textAnchor="middle" fontSize="10" fontWeight="600" fill={pill.text} fontFamily="Inter Variable">{t}</text>
+              <text x={x} y={y + 3.6} textAnchor="middle" fontSize="10" fontWeight="600" fill={pill.text} fontFamily="DM Sans Variable, DM Sans, system-ui">{t}</text>
             </motion.g>
           ))}
         </>
@@ -141,11 +141,12 @@ export function GoogleG({ size = 20 }: { size?: number }) {
 export function AuthHeader({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ position: "relative", height: 196, overflow: "hidden", background: "#fff" }}>
-      <img src="/img/auth-shoe.png" alt=""
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 12%" }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,8,26,0.4) 0%, rgba(3,8,26,0) 30%, rgba(255,255,255,0) 68%, rgba(255,255,255,0.85) 88%, #fff 96%)", bottom: -2 }} />
+      {/* the same motion-blurred stride as the goal card, graded into brand blue, then fading into the form */}
+      <img src="/img/goal-run.webp" alt=""
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 45%", filter: "saturate(1.1)" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,11,36,0.45) 0%, rgba(3,11,36,0.25) 30%, rgba(0,40,140,0.7) 62%, rgba(0,40,140,0.45) 74%, rgba(255,255,255,0.85) 90%, #fff 97%)", bottom: -2 }} />
       <div className="pad top" style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <button className="icon-btn on-blue" aria-label="Back" onClick={onBack}><ArrowLeft size={20} /></button>
+        <button data-cuelume-navigate className="icon-btn on-blue" aria-label="Back" onClick={onBack}><ArrowLeft size={20} /></button>
         <Wordmark width={84} color="#fff" />
         <span style={{ width: 44 }} aria-hidden />
       </div>
@@ -157,11 +158,10 @@ export function AuthHeader({ onBack }: { onBack: () => void }) {
   Sport icons: ink outline + blue gradient duotone fill; the selected one goes solid blue.
   The gradient lives once in <IconDefs/>; CSS paints Phosphor's 20%-opacity duotone layer with it.
 */
-export function SportIcon({ Icon, size = 24, selected = false }: { Icon: typeof House | SportIconType; size?: number; selected?: boolean }) {
-  // the sport's object (shoe, bike, racket) in duotone: ink line with the blue gradient fill; solid blue when chosen
-  return selected
-    ? <Icon size={size} weight="fill" color="var(--blue)" />
-    : <Icon size={size} weight="duotone" className="duo-icon" />;
+export function SportIcon({ Icon, size = 24, selected = false, neutral = false }: { Icon: typeof House | SportIconType; size?: number; selected?: boolean; neutral?: boolean }) {
+  // the sport's object (shoe, bike, racket): ink outline with solid blue fill shapes; all blue when chosen
+  // neutral: utility icons (metrics, fields, places) stay black and gray; only activities carry the blue
+  return <Icon size={size} weight="duotone" className={`duo-icon${neutral ? " neu" : ""}${selected ? " sel" : ""}`} />;
 }
 
 export function IconDefs() {

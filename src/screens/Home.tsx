@@ -4,6 +4,7 @@ import { Bell, PencilSimple, Plus, MapPin, CaretRight, Flag, Trophy, Quotes, X }
 import { StatusBar, Wordmark, Ring, SportIcon, type Route } from "../components";
 import { athlete, goal as kavyaGoal, otherGoals, entries, week, locations, bests, byId } from "../data";
 import type { Profile } from "./Onboarding";
+import { cumulative, fmtN, fmtHours, fmtTime, amount, goalText } from "../metrics";
 
 const fmt = (n: number) => n.toLocaleString("en-IN");
 
@@ -27,7 +28,7 @@ function GoalPath({ history, target, endLabel }: { history: number[]; target: nu
       <circle cx={last[0]} cy={last[1]} r="6" fill="#fff" stroke="rgba(255,255,255,0.35)" strokeWidth="6" paintOrder="stroke" />
       <g transform={`translate(${W - 2},${-2})`} color="#fff"><Flag size={18} weight="fill" x={-2} y={-16} /></g>
       {(endLabel ? [["Today", 0, "start"], [endLabel, W, "end"]] : [["Jan", 0, "start"], ["Today", last[0], "middle"], ["Dec", W, "end"]]).map(([t, tx, a]) => (
-        <text key={t as string} x={tx as number} y={H + 18} textAnchor={a as "start"} fontSize="11" fill="rgba(255,255,255,0.6)" fontFamily="Inter Variable">{t}</text>
+        <text key={t as string} x={tx as number} y={H + 18} textAnchor={a as "start"} fontSize="11" fill="rgba(255,255,255,0.6)" fontFamily="Roboto Variable, Roboto, system-ui">{t}</text>
       ))}
     </svg>
   );
@@ -36,10 +37,23 @@ function GoalPath({ history, target, endLabel }: { history: number[]; target: nu
 export default function Home({ go, profile }: { go: (r: Route) => void; profile: Profile | null }) {
   const fresh = !!profile;
   const g = fresh
-    ? { title: `${byId(profile.activity).name} ${fmt(profile.target)} ${byId(profile.activity).unit}`, current: profile.current, target: profile.target, unit: byId(profile.activity).unit, due: profile.due, daysLeft: profile.daysLeft, history: [] as number[] }
+    ? { title: `${byId(profile.activity).name} ${goalText(profile.goal)}`, current: profile.current, target: profile.target, unit: profile.unit, due: profile.due, daysLeft: profile.daysLeft, history: [] as number[] }
     : kavyaGoal;
   const pct = g.current / g.target;
   const perWeek = (g.target - g.current) / (g.daysLeft / 7);
+  /* The hero numbers, in the goal's own terms: a running total for cumulative goals, the latest
+     weigh-in for Body weight, the best result so far for Performance */
+  const pg = fresh ? profile.goal : null;
+  const hero = !pg || cumulative(pg.metric)
+    ? { big: pg?.metric === "duration" ? fmtN(g.current) : fmt(g.current), of: ` / ${pg ? amount(pg, pg.target) : `${fmt(g.target)} ${g.unit}`}`,
+        chips: [[`${Math.round(pct * 100)}%`, "complete"], [String(g.daysLeft), "days left"], pg ? [amount(pg, g.target - g.current), "to go"] : [fmt(g.target - g.current), `${g.unit} to go`]],
+        week: pg ? (pg.metric === "duration" ? fmtHours(Math.round(perWeek * 4) / 4) : `${fmt(Math.ceil(perWeek))} ${g.unit}`) : `${fmt(Math.round(perWeek))} ${g.unit}` }
+    : pg.metric === "weight"
+      ? { big: fmtN(pg.current), of: ` ${pg.unit} now, target ${fmtN(pg.target)} ${pg.unit}`,
+          chips: [[`${fmtN(Math.round(Math.abs(pg.current - pg.target) * 10) / 10)} ${pg.unit}`, "to go"], [String(g.daysLeft), "days left"]],
+          week: `${fmtN(Math.round((Math.abs(pg.current - pg.target) / (g.daysLeft / 7)) * 10) / 10)} ${pg.unit}` }
+      : { big: pg.best ? fmtTime(pg.best) : "--", of: ` ${pg.best ? "best, " : ""}target ${fmtTime(pg.target)} over ${fmtN(pg.perfDist ?? 0)} ${pg.perfUnit}`,
+          chips: [[fmtTime(pg.target), "target time"], [String(g.daysLeft), "days left"]], week: "" };
   const motto = profile ? profile.motto : "Consistency beats intensity.";
   const activity = byId(fresh ? profile.activity : kavyaGoal.activity);
   // Pro is offered here, after they've seen their goal live, never as a gate between the goal card and the app
@@ -53,7 +67,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         background: "radial-gradient(120% 60% at 85% 18%, rgba(47,212,236,0.35), transparent 60%), linear-gradient(180deg, #0040D0 0%, #0054FB 42%, #3D8BFF 80%, var(--bg) 100%)" }}>
         <header className="pad top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Wordmark width={98} color="#fff" />
-          <button className="icon-btn on-blue" aria-label={fresh ? "Notifications" : "Notifications, 2 unread"} style={{ position: "relative" }}>
+          <button data-cuelume-tap className="icon-btn on-blue" aria-label={fresh ? "Notifications" : "Notifications, 2 unread"} style={{ position: "relative" }}>
             <Bell size={20} />
             {!fresh && <span style={{ position: "absolute", top: 10, right: 11, width: 8, height: 8, borderRadius: "50%", background: "#2FD4EC", border: "2px solid #0054FB" }} />}
           </button>
@@ -62,20 +76,20 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         <motion.div className="pad" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ marginTop: 26 }}>
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>{fresh ? `Welcome, ${profile.name || athlete.first}` : `Morning, ${athlete.first}`}</p>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-            <h1 className="title" style={{ fontSize: 26, color: "#fff" }}>{g.title}</h1>
-            <button className="icon-btn on-blue" aria-label="Edit goal" style={{ width: 38, height: 38 }}><PencilSimple size={17} /></button>
+            <h1 className="title" style={{ fontSize: 22, color: "#fff" }}>{g.title}</h1>
+            <button data-cuelume-tap className="icon-btn on-blue" aria-label="Edit goal" style={{ width: 38, height: 38 }}><PencilSimple size={17} /></button>
           </div>
           <p className="num" style={{ fontSize: 64, fontWeight: 600, lineHeight: 1, marginTop: 18 }}>
-            {fmt(g.current)}<span style={{ fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.7)", letterSpacing: 0 }}> / {fmt(g.target)} {g.unit}</span>
+            {hero.big}<span style={{ fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.7)", letterSpacing: 0 }}>{hero.of}</span>
           </p>
           <div style={{ margin: "20px 0 4px" }}><GoalPath history={g.history} target={g.target} endLabel={fresh ? g.due : undefined} /></div>
           <div style={{ display: "flex", gap: 8, marginTop: 16, overflowX: "auto", scrollbarWidth: "none" }}>
-            {[[`${Math.round(pct * 100)}%`, "complete"], [String(g.daysLeft), "days left"], [fmt(g.target - g.current), `${g.unit} to go`]].map(([v, l]) => (
+            {hero.chips.map(([v, l]) => (
               <span key={l} className="chip-glass"><strong className="num" style={{ fontWeight: 600 }}>{v}</strong> {l}</span>
             ))}
           </div>
           <p style={{ fontSize: 14, marginTop: 14, color: "rgba(255,255,255,0.9)" }}>
-            {fresh ? `Your first ${activity.name.toLowerCase()} starts the line.` : `On pace for ${g.due}.`} About {fmt(Math.round(perWeek))} {g.unit} a week gets you there.
+            {fresh ? `Your first ${activity.name.toLowerCase()} starts the line.` : `On pace for ${g.due}.`} {hero.week ? `About ${hero.week} a week gets you there.` : "Log a timed effort at this distance to set your first mark."}
           </p>
         </motion.div>
       </section>
@@ -87,10 +101,10 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
             <motion.div key="pro" className="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginBottom: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
               style={{ position: "relative", padding: "16px 16px 16px 18px", marginBottom: 8, overflow: "hidden" }}>
-              <p style={{ fontSize: 15, fontWeight: 600, paddingRight: 36 }}>Pace every week to {fmt(g.target)} {g.unit}</p>
+              <p style={{ fontSize: 15, fontWeight: 600, paddingRight: 36 }}>Pace every week to {pg ? goalText(pg) : `${fmt(g.target)} ${g.unit}`}</p>
               <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45, paddingRight: 8 }}>Pro adds deadline projections, all-time bests and every sport. Free for 15 days.</p>
-              <button className="btn btn-blue" onClick={() => go("pro")} style={{ height: 44, marginTop: 12, padding: "0 18px", fontSize: 15 }}>See Pro plans</button>
-              <button className="icon-btn" aria-label="Dismiss Pro offer" onClick={() => setProOffer(false)}
+              <button data-cuelume-tap className="btn btn-blue" onClick={() => go("pro")} style={{ height: 44, marginTop: 12, padding: "0 18px", fontSize: 15 }}>See Pro plans</button>
+              <button data-cuelume-close className="icon-btn" aria-label="Dismiss Pro offer" onClick={() => setProOffer(false)}
                 style={{ position: "absolute", top: 6, right: 6, border: 0, background: "transparent", color: "var(--gray)" }}><X size={18} /></button>
             </motion.div>
           )}
@@ -115,7 +129,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
               </div>
             );
           })}
-          <button className="card" style={{ flex: "none", width: fresh ? "100%" : 140, padding: 16, display: "grid", placeItems: "center", alignContent: "center", gap: 8, borderStyle: "dashed", color: "var(--blue)" }}>
+          <button data-cuelume-tap className="card" style={{ flex: "none", width: fresh ? "100%" : 140, padding: 16, display: "grid", placeItems: "center", alignContent: "center", gap: 8, borderStyle: "dashed", color: "var(--blue)" }}>
             <Plus size={22} />
             <span style={{ fontSize: 14, fontWeight: 560 }}>{fresh ? "Add a second goal" : "New goal"}</span>
             {fresh && <span className="cap">Track another sport alongside {activity.name.toLowerCase()}</span>}
@@ -123,12 +137,12 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         </div>
 
         {/* This week */}
-        <div className="sec"><h2 className="h2">This week</h2><button className="link">Calendar</button></div>
+        <div className="sec"><h2 className="h2">This week</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link">Calendar</button></div>
         <div className="card" style={{ padding: "12px 8px", display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {week.map((w) => {
             const done = !fresh && w.done;
             return (
-              <button key={w.n} aria-label={`${w.d} ${w.n}${done ? ", activity logged" : w.planned ? ", session planned" : ""}`}
+              <button data-cuelume-tap key={w.n} aria-label={`${w.d} ${w.n}${done ? ", activity logged" : w.planned ? ", session planned" : ""}`}
                 style={{ display: "grid", justifyItems: "center", gap: 4, padding: "8px 0", borderRadius: 14, background: w.today ? "var(--blue)" : "transparent", color: w.today ? "#fff" : "var(--ink)" }}>
                 <span style={{ fontSize: 11, color: w.today ? "rgba(255,255,255,0.75)" : "var(--gray)" }}>{w.d}</span>
                 <span className="num" style={{ fontSize: 17, fontWeight: 600, letterSpacing: 0 }}>{w.n}</span>
@@ -139,7 +153,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         </div>
 
         {/* Today's plan */}
-        <div className="sec"><h2 className="h2">Today's plan</h2><button className="link"><Plus size={14} weight="bold" />Schedule</button></div>
+        <div className="sec"><h2 className="h2">Today's plan</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link"><Plus size={14} weight="bold" />Schedule</button></div>
         <div className="card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
           <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={activity.Icon} size={23} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -147,12 +161,12 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
             <p className="cap" style={{ marginTop: 2 }}>{fresh ? "Start whenever you're ready" : "Next: easy 6 km run, Thursday"}</p>
           </div>
           {fresh
-            ? <button className="btn btn-blue" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("record")}>Start</button>
-            : <button className="btn btn-soft" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("summary")}>View</button>}
+            ? <button data-cuelume-tap className="btn btn-blue" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("record")}>Start</button>
+            : <button data-cuelume-tap className="btn btn-soft" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("summary")}>View</button>}
         </div>
 
         {/* Recent activity */}
-        <div className="sec"><h2 className="h2">Recent activity</h2>{!fresh && <button className="link" onClick={() => go("timeline")}>See all</button>}</div>
+        <div className="sec"><h2 className="h2">Recent activity</h2>{!fresh && <button data-cuelume-tap data-cuelume-emphasis="subtle" className="link" onClick={() => go("timeline")}>See all</button>}</div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>Nothing yet. Every activity you record lands here, with its route, stats and your notes.</p>
         ) : (
@@ -160,7 +174,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
             {entries.slice(0, 3).map((e, i) => {
               const A = byId(e.activity);
               return (
-                <button key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+                <button data-cuelume-tap key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
                   <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={A.Icon} size={21} /></span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{e.title}</span>
@@ -174,14 +188,14 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         )}
 
         {/* Top locations */}
-        <div className="sec"><h2 className="h2">Top locations</h2>{!fresh && <button className="link">View all</button>}</div>
+        <div className="sec"><h2 className="h2">Top locations</h2>{!fresh && <button data-cuelume-tap data-cuelume-emphasis="subtle" className="link">View all</button>}</div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>The places you return to most will show up here after a few activities.</p>
         ) : (
           <div className="card" style={{ padding: "4px 18px" }}>
             {locations.map((l, i) => (
               <div key={l.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><MapPin size={19} weight="fill" /></span>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--bg)", color: "var(--ink)", display: "grid", placeItems: "center", flex: "none" }}><MapPin size={19} weight="duotone" /></span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{l.name}</span>
                   <span className="cap">{l.count} {l.kind}, last {l.last}</span>
@@ -193,7 +207,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         )}
 
         {/* Personal bests */}
-        <div className="sec"><h2 className="h2">Personal bests</h2><button className="link"><Plus size={14} weight="bold" />Add</button></div>
+        <div className="sec"><h2 className="h2">Personal bests</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link"><Plus size={14} weight="bold" />Add</button></div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>Add up to four times, distances or lifts you're proud of. We'll flag it when you beat one.</p>
         ) : (
@@ -203,7 +217,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
                 {b.fresh && <span style={{ position: "absolute", inset: "0 0 auto 0", height: 3, background: "var(--splash)" }} />}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="cap">{b.label}</span>
-                  {b.fresh && <Trophy size={15} weight="fill" color="var(--blue)" />}
+                  {b.fresh && <Trophy size={15} weight="fill" color="var(--ink)" />}
                 </div>
                 <p className="num" style={{ fontSize: 24, fontWeight: 600, marginTop: 10 }}>{b.value}</p>
                 <p className="cap" style={{ color: b.fresh ? "var(--blue)" : "var(--gray)" }}>{b.fresh ? "New, today" : b.when}</p>
@@ -214,7 +228,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
 
         {/* Motto */}
         {motto && <figure style={{ marginTop: 32, padding: "24px 4px 0", borderTop: "1px solid var(--line)" }}>
-          <Quotes size={22} weight="fill" color="var(--blue)" />
+          <Quotes size={22} weight="fill" color="var(--gray-2)" />
           <blockquote style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.2, marginTop: 10 }}>{motto}</blockquote>
           <figcaption className="cap" style={{ marginTop: 8 }}>Your motto</figcaption>
         </figure>}

@@ -8,19 +8,28 @@ import { WORD } from "../wordmark";
   0.20  ENN wipes in along its slant
   0.70  the OO loop traces its own outline in cyan
   1.70  the blue/cyan mesh floods the loop, outline fades
-  1.95  a soft light travels through ENN, catching the letter edges
-  2.80  the same light enters the loop at its left tip and runs the infinity twice, a figure-eight, never a spin
-        (one light at one speed, about 1,700 units a second, through the word and round the loop)
+  1.95  a light enters the loop at its left tip and runs the infinity twice, a figure-eight, never a spin
   2.40  tagline
-  4.60  hand off to Welcome (the loader line fills over exactly this time)
+  3.55  leaving the loop at the same tip, the light travels back to front through ENN, N to E,
+        catching the letter edges (one light at one speed, round the loop and through the word);
+        ENN takes on the loop's blue-cyan gradient right behind it, so the whole mark ends in one style
+  4.90  hand off to Welcome (the loader line fills over exactly this time)
 */
-const TOTAL = 4.6;
+const TOTAL = 4.9;
 
 const blobs = [
   { c: "#0054FB", cx: [1330, 1420, 1330], cy: [150, 90, 150], r: 230 },
   { c: "#2FD4EC", cx: [1520, 1440, 1520], cy: [40, 130, 40], r: 200 },
   { c: "#0A2FD0", cx: [1700, 1780, 1700], cy: [200, 120, 200], r: 240 },
   { c: "#38E8FF", cx: [1860, 1760, 1860], cy: [60, 30, 60], r: 170 },
+];
+
+/* the same palette spread across ENN, deep blue at the E warming to cyan where it meets the loop */
+const ennBlobs = [
+  { c: "#0A2FD0", cx: [120, 220, 120], cy: [180, 100, 180], r: 240 },
+  { c: "#0054FB", cx: [460, 380, 460], cy: [40, 140, 40], r: 230 },
+  { c: "#2FD4EC", cx: [800, 880, 800], cy: [160, 60, 160], r: 210 },
+  { c: "#38E8FF", cx: [1100, 1020, 1100], cy: [50, 150, 50], r: 190 },
 ];
 
 /* Points on a lemniscate fitted to the OO loop, so the light follows the figure-eight. */
@@ -37,7 +46,7 @@ function lemniscate(n = 48) {
 }
 
 export function SplashLogo({ width = 230, animate = true }: { width?: number; animate?: boolean }) {
-  // start the loop light at its left tip, where the ENN shine arrives
+  // start the loop light at its left tip; it ends there too and carries on into ENN
   const path = useMemo(() => {
     const { xs, ys } = lemniscate(), h = xs.length >> 1;
     return { xs: [...xs.slice(h), ...xs.slice(1, h + 1)], ys: [...ys.slice(h), ...ys.slice(1, h + 1)] };
@@ -54,10 +63,20 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
         <mask id="enn-sweep" maskUnits="userSpaceOnUse" x="-600" y="-200" width="2200" height="700">
           {animate && (
             // a CSS keyframe, not motion: motion doesn't run inside <mask>, browsers do
-            <g style={{ animation: "enn-sweep 0.9s linear 1.95s both" }}>
+            <g style={{ animation: "enn-sweep 0.9s linear 3.55s both" }}>
               <rect x="-210" y="-120" width="420" height="520" fill="url(#enn-band)" transform="skewX(-12)" />
             </g>
           )}
+        </mask>
+        {/* ENN takes on the loop's gradient right behind the light: a soft-edged wipe, N to E, that stays */}
+        <clipPath id="enn-clip">{[WORD.e1, WORD.e2, WORD.n1, WORD.n2].map((d) => <path key={d.slice(0, 10)} d={d} />)}</clipPath>
+        <linearGradient id="enn-fill-edge" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="#fff" stopOpacity="0" /><stop offset="0.09" stopColor="#fff" stopOpacity="1" /><stop offset="1" stopColor="#fff" stopOpacity="1" />
+        </linearGradient>
+        <mask id="enn-fill" maskUnits="userSpaceOnUse" x="-600" y="-200" width="4000" height="700">
+          <g style={animate ? { animation: "enn-fill 0.9s linear 3.62s both" } : undefined}>
+            <rect x="-100" y="-120" width="2400" height="520" fill="url(#enn-fill-edge)" transform="skewX(-12)" />
+          </g>
         </mask>
         <filter id="enn-bloom" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="12" /></filter>
         <filter id="mesh-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60" /></filter>
@@ -72,7 +91,7 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
       {/* edge bloom behind ENN, seen only where the light is */}
       {animate && (
         <motion.g mask="url(#enn-sweep)" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
-          transition={{ delay: 1.95, duration: 0.95, times: [0, 0.15, 0.85, 1] }}>
+          transition={{ delay: 3.55, duration: 0.95, times: [0, 0.15, 0.85, 1] }}>
           <g fill="#2FD4EC" filter="url(#enn-bloom)">{[WORD.e1, WORD.e2, WORD.n1, WORD.n2].map((d) => <path key={d.slice(0, 10)} d={d} />)}</g>
         </motion.g>
       )}
@@ -87,10 +106,25 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
         {[WORD.e1, WORD.e2, WORD.n1, WORD.n2].map((d) => <path key={d.slice(0, 10)} d={d} />)}
       </motion.g>
 
+      {/* ENN in the loop's mesh: same base blue and drifting cyan blobs, revealed behind the light */}
+      <g mask="url(#enn-fill)">
+        <g clipPath="url(#enn-clip)">
+          <rect x="-40" y="-40" width="1240" height="320" fill="#0054FB" />
+          <g filter="url(#mesh-blur)">
+            {ennBlobs.map((b, i) => (
+              <motion.circle key={i} r={b.r} fill={b.c}
+                initial={{ cx: b.cx[0], cy: b.cy[0] }}
+                animate={animate ? { cx: b.cx, cy: b.cy } : { cx: b.cx[0], cy: b.cy[0] }}
+                transition={{ duration: 5 + i, repeat: Infinity, ease: "easeInOut" }} />
+            ))}
+          </g>
+        </g>
+      </g>
+
       {/* a cool sheen on the letter faces, carried by the same light */}
       {animate && (
         <motion.g mask="url(#enn-sweep)" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.9, 0.9, 0] }}
-          transition={{ delay: 1.95, duration: 0.95, times: [0, 0.15, 0.85, 1] }} fill="#86E8FF">
+          transition={{ delay: 3.55, duration: 0.95, times: [0, 0.15, 0.85, 1] }} fill="#86E8FF">
           {[WORD.e1, WORD.e2, WORD.n1, WORD.n2].map((d) => <path key={d.slice(0, 10)} d={d} />)}
         </motion.g>
       )}
@@ -111,7 +145,7 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
           <motion.circle r="90" fill="#E8FDFF" filter="url(#spark)"
             initial={{ cx: path.xs[0], cy: path.ys[0], opacity: 0 }}
             animate={{ cx: [...path.xs, ...path.xs.slice(1)], cy: [...path.ys, ...path.ys.slice(1)], opacity: [0, 0.95, 0.95, 0.95, 0] }}
-            transition={{ delay: 2.8, duration: 1.7, ease: "linear", opacity: { delay: 2.8, duration: 1.7, times: [0, 0.05, 0.5, 0.9, 1] } }} />
+            transition={{ delay: 1.95, duration: 1.7, ease: "linear", opacity: { delay: 1.95, duration: 1.7, times: [0, 0.05, 0.5, 0.95, 1] } }} />
         )}
       </motion.g>
 
@@ -150,11 +184,11 @@ export default function Splash({ go }: { go: (r: Route) => void }) {
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(60% 26% at 0% 100%, rgba(0,84,251,0.32) 0%, rgba(0,84,251,0) 100%), radial-gradient(50% 22% at 100% 0%, rgba(47,212,236,0.2) 0%, rgba(47,212,236,0) 100%)" }} />
       <div aria-hidden className="grain" style={{ opacity: 0.32 }} />
       <StatusBar onBlue />
-      <div style={{ position: "relative", display: "grid", justifyItems: "center", gap: 22 }}>
+      <div style={{ position: "relative", display: "grid", justifyItems: "center", gap: 6 }}>
         <div style={{ padding: "12px 6px" }}><SplashLogo animate={!reduce} /></div>
         <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduce ? 0 : 2.4, duration: 0.6 }}
           style={{ color: "rgba(255,255,255,0.6)", fontSize: 15, letterSpacing: "0.01em" }}>
-          Your sports companion
+          Record. Grow. Remember.
         </motion.p>
       </div>
       <span aria-hidden style={{ position: "absolute", left: "38%", right: "38%", bottom: 64, height: 2, borderRadius: 2, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
