@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, animate, useMotionValue } from "motion/react";
 import { play } from "cuelume";
 import { toBlob } from "html-to-image";
-import { ArrowLeft, ArrowRight, MagnifyingGlass, Check, CheckCircle, Target, CalendarBlank, CaretRight, CaretLeft, CaretDown, X, ImageSquare, ShareFat, Ruler, Scales, MapPin, Info, Trophy, Mountains, Path, ArrowsClockwise, Plus, Timer, NavigationArrow, DownloadSimple } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, MagnifyingGlass, Check, CheckCircle, Target, CalendarBlank, CaretRight, CaretLeft, CaretDown, X, ImageSquare, ShareFat, Ruler, Scales, MapPin, Info, Trophy, Mountains, Path, ArrowsClockwise, Plus, Timer, NavigationArrow, DownloadSimple, MapTrifold, Waves, Crosshair } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, Wordmark, type Route } from "../components";
 import { Sheet, Wheel, WheelBand } from "../sheet";
-import { TrackIcon, RouteIcon, type SportIconType } from "../sportIcons";
+import { TrackIcon, type SportIconType } from "../sportIcons";
 import { activities, byId, mottos, groupInfo, groupOrder, matches, savedPlaces, nearbyPlaces, type Activity, type Group, type Place, type PlaceType } from "../data";
 import { METRICS, fmtN, fmtHours, fmtTime, refText, goalParts, goalSentence, amount, type Goal, type Metric, type DistUnit } from "../metrics";
 
@@ -221,14 +221,11 @@ const SkeletonRow = () => (
 /* Places for a Reps or Laps reference, found like a map search: with location on, saved places and places
    near you are sorted by how far away they are and the search box looks around you; with it off, only saved
    places show. One tap to pick (tap again to clear), or add a new one inline. */
-function PlacePicker({ noun, places, selected, onSelect, onAdd, loc, onAskLoc }: {
-  noun: "rep" | "lap"; places: Place[]; selected?: string; onSelect: (p: Place | null) => void; onAdd: (p: Place) => void; loc: LocState; onAskLoc: () => void;
+function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAskLoc }: {
+  noun: "rep" | "lap"; places: Place[]; selected?: string; onSelect: (p: Place | null) => void; onAdd: (p: Place) => void; onNew: () => void; loc: LocState; onAskLoc: () => void;
 }) {
   const [q, setQ] = useState("");
   const [searching, setSearching] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState<{ name: string; dist: number; unit: string; type: PlaceType }>({ name: "", dist: 0, unit: noun === "lap" ? "m" : "km", type: noun === "lap" ? "Track" : "Hill" });
-  const [tried, setTried] = useState(false);
   // a short "searching around you" beat after each pause in typing, like a real lookup
   useEffect(() => { if (loc !== "on" || !q.trim()) return setSearching(false); setSearching(true); const t = setTimeout(() => setSearching(false), 450); return () => clearTimeout(t); }, [q, loc]);
   const gps = loc === "on";
@@ -236,14 +233,8 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, loc, onAskLoc }:
   const hit = (p: Place) => !term || p.name.toLowerCase().includes(term) || (p.area ?? "").toLowerCase().includes(term) || p.type.toLowerCase().includes(term);
   const byAway = (a: Place, b: Place) => (a.away ?? 99) - (b.away ?? 99);
   const saved = places.filter(hit).sort(gps ? byAway : () => 0);
-  const nearby = gps ? nearbyPlaces.filter((n) => !places.some((p) => p.id === n.id)).filter(hit).sort(byAway) : [];
+  const nearby = gps ? nearbyPlaces.filter((n) => !places.some((p) => p.id === n.id)).filter(hit).sort(byAway).slice(0, 3) : [];
   const pick = (p: Place, on: boolean) => { if (on) return onSelect(null); if (!places.some((x) => x.id === p.id)) onAdd(p); onSelect(p); };
-  const save = () => {
-    setTried(true);
-    if (!draft.name.trim() || !(draft.dist > 0)) return;
-    const p: Place = { id: `pl-${Date.now()}`, name: draft.name.trim(), dist: draft.dist, unit: draft.unit as Place["unit"], type: draft.type, ...(gps && { away: 0, area: "Your location" }) };
-    onAdd(p); onSelect(p); setAdding(false); setTried(false); setDraft({ ...draft, name: "", dist: 0 });
-  };
   const row = (p: Place) => {
     const on = p.id === selected;
     return (
@@ -266,7 +257,12 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, loc, onAskLoc }:
       <div style={{ position: "relative" }}>
         <MagnifyingGlass size={17} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 15 }} />
         <input data-cuelume-type type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={gps ? "Search places near you" : "Search saved places"} aria-label={gps ? "Search places near you" : "Search saved places"}
-          style={{ height: 46, paddingLeft: 40, background: "var(--bg)", borderColor: "transparent" }} />
+          style={{ height: 46, paddingLeft: 40, paddingRight: 52, background: "var(--bg)", borderColor: "transparent" }} />
+        <button data-cuelume-open type="button" aria-label="Add a place on the map" onClick={onNew}
+          style={{ position: "absolute", right: 4, top: 4, width: 38, height: 38, borderRadius: 10, background: "transparent", color: "var(--blue)", display: "grid", placeItems: "center" }}>
+          <span aria-hidden style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 1, background: "var(--line)" }} />
+          <Plus size={20} weight="regular" />
+        </button>
       </div>
 
       {/* where the search is looking from */}
@@ -290,37 +286,178 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, loc, onAskLoc }:
 
       <div role="radiogroup" aria-label="Places" style={{ display: "grid", gap: 8, marginTop: 10 }}>
         {loc === "locating" || searching ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (<>
+          {gps && !term && (
+            <button data-cuelume-open type="button" onClick={onNew}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: 8, paddingRight: 12, borderRadius: 16, textAlign: "left", border: "1.5px solid var(--line)", background: "#fff" }}>
+              <span aria-hidden style={{ position: "relative", width: 52, height: 52, borderRadius: 12, flex: "none", overflow: "hidden", background: "var(--blue-50)" }}>
+                <span className="gps-pulse" style={{ position: "absolute", left: "50%", top: "50%", transform: "scale(0.8)" }} />
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>Use my current location</span>
+                <span className="cap" style={{ letterSpacing: 0, display: "block" }}>Adyar, Chennai · pin it and name it</span>
+              </span>
+              <CaretRight size={16} color="var(--gray)" aria-hidden />
+            </button>
+          )}
           {gps && saved.length > 0 && head("Saved")}
           {saved.map(row)}
           {nearby.length > 0 && head(term ? "Near you" : "Popular near you")}
           {nearby.map(row)}
-          {!saved.length && !nearby.length && <p className="cap" style={{ padding: "6px 2px" }}>Nothing matches “{q}”{gps ? " near you" : ""}. Add it below.</p>}
+          {!saved.length && !nearby.length && <p className="cap" style={{ padding: "6px 2px" }}>{term ? <>Nothing matches “{q}”{gps ? " near you" : ""}. Tap + to pin it on the map.</> : "No saved places yet. Tap + to pin one on the map."}</p>}
         </>)}
       </div>
-      {adding ? (
-        <div className="card" style={{ marginTop: 10, padding: 14, display: "grid", gap: 14, background: "var(--bg)", borderColor: "transparent" }}>
-          <div>
-            <label className="flabel" htmlFor="pl-name">Name</label>
-            <input data-cuelume-type id="pl-name" className="input" value={draft.name} maxLength={40} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={noun === "lap" ? "Such as City Stadium track" : "Such as Temple hill"}
-              aria-invalid={tried && !draft.name.trim()} style={{ height: 50 }} />
-            {fieldErr(tried && !draft.name.trim() ? "Give the place a name" : undefined)}
-          </div>
-          <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
-            units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} error={tried && !(draft.dist > 0) ? "Enter its length" : undefined} />
-          <div><span className="flabel">Type</span><Seg label="Place type" options={[["Track", "Track"], ["Hill", "Hill"], ["Road", "Road"], ["Loop", "Loop"]]} value={draft.type} onChange={(t) => setDraft({ ...draft, type: t })} /></div>
-          {gps && <p className="cap" style={{ display: "flex", alignItems: "center", gap: 6 }}><span aria-hidden className="gps-dot" />Pinned to where you are now</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 8 }}>
-            <button data-cuelume-close type="button" className="btn btn-soft" onClick={() => { setAdding(false); setTried(false); }}>Cancel</button>
-            <button data-cuelume-tap type="button" className="btn btn-blue" onClick={save}>Save place</button>
-          </div>
-        </div>
-      ) : (
-        <button data-cuelume-open type="button" onClick={() => setAdding(true)}
-          style={{ width: "100%", marginTop: 8, height: 48, borderRadius: 14, border: "1.5px dashed var(--line)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 15, fontWeight: 560, color: "var(--blue)" }}>
-          <Plus size={16} weight="bold" aria-hidden />Add a new place
-        </button>
-      )}
     </div>
+  );
+}
+
+/* The prototype's map around the simulated GPS fix (Adyar, Chennai), in a 900 x 900 space.
+   Known places sit at fixed spots so a dropped pin can snap to one and prefill it. */
+const MAP = 900, YOU = { x: 450, y: 450 };
+const MAP_SPOTS: Record<string, { x: number; y: number }> = {
+  "pl-adyar-loop": { x: 520, y: 392 }, "pl-elliots-road": { x: 652, y: 520 }, "pl-ssp-track": { x: 420, y: 318 },
+  "pl-chithra-hill": { x: 300, y: 690 }, "pl-nehru-stadium": { x: 480, y: 120 }, "pl-guindy-park": { x: 282, y: 452 },
+  "pl-mount-steps": { x: 150, y: 560 }, "pl-marina-road": { x: 690, y: 236 }, "pl-iit-track": { x: 360, y: 560 },
+};
+const mapPlaces = [...savedPlaces, ...nearbyPlaces].filter((p) => MAP_SPOTS[p.id]);
+const AREAS = [
+  { n: "Adyar", x: 520, y: 470 }, { n: "Guindy", x: 250, y: 400 }, { n: "Besant Nagar", x: 640, y: 600 }, { n: "Velachery", x: 300, y: 760 },
+  { n: "Kotturpuram", x: 410, y: 270 }, { n: "Mylapore", x: 600, y: 170 }, { n: "St. Thomas Mount", x: 120, y: 620 },
+];
+const areaAt = (x: number, y: number) => AREAS.reduce((b, a) => (Math.hypot(a.x - x, a.y - y) < Math.hypot(b.x - x, b.y - y) ? a : b)).n;
+const typeLen: Record<PlaceType, { dist: number; unit: Place["unit"] }> = { Track: { dist: 400, unit: "m" }, Hill: { dist: 1, unit: "km" }, Road: { dist: 2, unit: "km" }, Loop: { dist: 3, unit: "km" } };
+const KM_PER_UNIT = 10 / MAP; // the whole map is about 10 km across
+
+function MapArt() {
+  return (
+    <svg width={MAP} height={MAP} viewBox={`0 0 ${MAP} ${MAP}`} aria-hidden style={{ display: "block" }}>
+      <rect width={MAP} height={MAP} fill="#EEF1F5" />
+      {/* parks and campus */}
+      <path d="M200 400 Q240 360 330 380 Q360 430 340 500 Q280 530 210 500 Q180 450 200 400Z" fill="#D8EDD6" />
+      <path d="M320 520 Q380 500 420 530 Q430 590 390 620 Q330 620 310 580Z" fill="#D8EDD6" />
+      <path d="M90 520 Q150 500 200 540 Q200 600 150 610 Q100 600 90 520Z" fill="#E6E2D6" />
+      {/* the coast and the river reaching it */}
+      <path d="M760 0 Q730 180 748 330 Q770 480 728 640 Q712 760 740 900 L900 900 L900 0Z" fill="#CFE2F8" />
+      <path d="M0 418 Q140 396 260 420 Q380 446 470 428 Q590 404 660 436 Q712 452 752 444" fill="none" stroke="#CFE2F8" strokeWidth="26" strokeLinecap="round" />
+      {/* main roads, then side streets */}
+      <g fill="none" stroke="#fff" strokeLinecap="round">
+        <g strokeWidth="11">
+          <path d="M60 900 L300 470 L470 160 L520 0" /><path d="M0 300 Q300 290 560 240 Q680 216 760 200" />
+          <path d="M150 900 Q300 700 520 560 Q620 500 720 470" /><path d="M560 900 Q560 700 600 520 Q630 360 640 0" />
+        </g>
+        <g strokeWidth="5" opacity="0.95">
+          <path d="M0 640 L460 600" /><path d="M380 900 L420 640" /><path d="M200 0 L320 380" /><path d="M640 650 L740 700" />
+          <path d="M440 330 L620 300" /><path d="M500 470 L560 380" /><path d="M700 300 L720 560" /><path d="M120 200 L300 120" />
+        </g>
+      </g>
+      <g fontFamily="inherit" fontSize="13" fontWeight="600" fill="#8A94A6" textAnchor="middle">
+        {AREAS.map((a) => <text key={a.n} x={a.x} y={a.y}>{a.n}</text>)}
+        <text x="830" y="420" fill="#6E9BD6" fontStyle="italic">Bay of Bengal</text>
+        <text x="200" y="398" fontSize="11" fill="#6E9BD6">Adyar river</text>
+      </g>
+    </svg>
+  );
+}
+
+/* Add a place: drag the map under a fixed pin (or tap a place on it). The pin snaps to a known place and
+   fills its name and length; anywhere else it names the spot by its area and suggests a length for the type. */
+function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "lap"; seed?: string; gps: boolean; onSave: (p: Place) => void; onClose: () => void }) {
+  const VH = 230;
+  const box = useRef<HTMLDivElement>(null);
+  const [vw, setVw] = useState(334);
+  const start = (seed && MAP_SPOTS[seed]) || YOU;
+  const x = useMotionValue(vw / 2 - start.x), y = useMotionValue(VH / 2 - start.y);
+  const [lift, setLift] = useState(false);
+  const [found, setFound] = useState<Place | null>(null);
+  const [at, setAt] = useState(start);
+  const [draft, setDraft] = useState<{ name: string; dist: number; unit: string; type: PlaceType }>({ name: "", dist: 0, unit: "m", type: noun === "lap" ? "Track" : "Hill" });
+  const [tried, setTried] = useState(false);
+
+  const settle = (cx: number, cy: number) => {
+    setAt({ x: cx, y: cy });
+    const near = mapPlaces.map((p) => ({ p, d: Math.hypot(MAP_SPOTS[p.id].x - cx, MAP_SPOTS[p.id].y - cy) })).sort((a, b) => a.d - b.d)[0];
+    if (near && near.d < 34) {
+      setFound(near.p);
+      setDraft({ name: near.p.name, dist: near.p.dist, unit: near.p.unit, type: near.p.type });
+    } else {
+      setFound(null);
+      setDraft((d) => ({ ...d, name: `${d.type} in ${areaAt(cx, cy)}`, ...typeLen[d.type] }));
+    }
+  };
+  const panTo = (px: number, py: number) => {
+    animate(x, vw / 2 - px, { type: "spring", stiffness: 260, damping: 32 });
+    animate(y, VH / 2 - py, { type: "spring", stiffness: 260, damping: 32 });
+    settle(px, py);
+  };
+  useEffect(() => {
+    const w = box.current?.clientWidth ?? 334;
+    setVw(w); x.set(w / 2 - start.x); y.set(VH / 2 - start.y); settle(start.x, start.y);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const save = () => {
+    setTried(true);
+    if (!draft.name.trim() || !(draft.dist > 0)) return;
+    const away = Math.round(Math.hypot(at.x - YOU.x, at.y - YOU.y) * KM_PER_UNIT * 10) / 10;
+    const same = found && found.name === draft.name.trim() && found.dist === draft.dist && found.unit === draft.unit;
+    onSave(same ? found : {
+      id: `pl-${Date.now()}`, name: draft.name.trim(), dist: draft.dist, unit: draft.unit as Place["unit"], type: draft.type,
+      img: found?.img, area: found?.area ?? areaAt(at.x, at.y), ...(gps && { away }),
+    });
+  };
+  const away = Math.hypot(at.x - YOU.x, at.y - YOU.y) * KM_PER_UNIT;
+
+  return (
+    <Sheet id="add-place" title={noun === "lap" ? "Add a track" : "Add a place"} sub="Move the map to put the pin on it, or tap a place." onClose={onClose}>
+      <div ref={box} style={{ position: "relative", height: VH, marginTop: 14, borderRadius: 18, overflow: "hidden", background: "#EEF1F5", touchAction: "none" }}>
+        <motion.div drag dragMomentum={false} style={{ x, y, position: "absolute", left: 0, top: 0, width: MAP, height: MAP, cursor: lift ? "grabbing" : "grab" }}
+          dragConstraints={{ left: vw / 2 - MAP, right: vw / 2, top: VH / 2 - MAP, bottom: VH / 2 }} dragElastic={0.08}
+          onDragStart={() => setLift(true)} onDragEnd={() => { setLift(false); settle(vw / 2 - x.get(), VH / 2 - y.get()); }}>
+          <MapArt />
+          {mapPlaces.map((p) => {
+            const s = MAP_SPOTS[p.id], on = found?.id === p.id;
+            return (
+              <button key={p.id} type="button" aria-label={`Pin ${p.name}`} onClick={() => panTo(s.x, s.y)}
+                style={{ position: "absolute", left: s.x - 17, top: s.y - 17, width: 34, height: 34, borderRadius: "50%", padding: 0, overflow: "hidden", border: `2.5px solid ${on ? "var(--blue)" : "#fff"}`, boxShadow: "0 3px 10px rgba(11,18,32,0.25)", background: "#fff" }}>
+                {p.img ? <img src={p.img} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} /> : null}
+              </button>
+            );
+          })}
+          {gps && <span aria-hidden className="gps-pulse" style={{ position: "absolute", left: YOU.x, top: YOU.y }} />}
+        </motion.div>
+        {/* the pin stays put; the map moves under it */}
+        <span aria-hidden style={{ position: "absolute", left: "50%", top: "50%", width: 14, height: 5, margin: "-2px 0 0 -7px", borderRadius: "50%", background: "rgba(11,18,32,0.28)", transform: `scale(${lift ? 0.7 : 1})`, transition: "transform .2s" }} />
+        <MapPin aria-hidden size={40} weight="fill" color="var(--blue)"
+          style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -20, marginTop: -38, filter: "drop-shadow(0 4px 6px rgba(0,84,251,0.35))", transform: `translateY(${lift ? -8 : 0}px)`, transition: "transform .2s var(--ease)", pointerEvents: "none" }} />
+        <button data-cuelume-tap type="button" aria-label={gps ? "Back to my location" : "Back to the start"} onClick={() => panTo(YOU.x, YOU.y)}
+          style={{ position: "absolute", right: 10, bottom: 10, width: 40, height: 40, borderRadius: 12, background: "#fff", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(11,18,32,0.18)", color: "var(--blue)" }}>
+          <Crosshair size={20} weight="bold" />
+        </button>
+      </div>
+
+      {/* what the pin is on */}
+      <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "10px 12px", borderRadius: 14, background: "var(--blue-50)" }}>
+        {found?.img
+          ? <img src={found.img} alt="" aria-hidden style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", flex: "none" }} />
+          : <span aria-hidden style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", display: "grid", placeItems: "center", flex: "none", color: "var(--blue)" }}><MapPin size={18} weight="fill" /></span>}
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{found ? found.name : `Pinned spot in ${areaAt(at.x, at.y)}`}</span>
+          <span className="cap num" style={{ letterSpacing: 0 }}>
+            {found ? `${placeLine(found)} found on the map` : "Suggested length, change it if you know it"}{gps && ` · ${away < 0.1 ? "Here" : awayText(away)}`}
+          </span>
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+        <div>
+          <label className="flabel" htmlFor="pl-name">Name</label>
+          <input data-cuelume-type id="pl-name" className="input" value={draft.name} maxLength={40} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder={noun === "lap" ? "Such as City Stadium track" : "Such as Temple hill"} aria-invalid={tried && !draft.name.trim()} style={{ height: 50 }} />
+          {fieldErr(tried && !draft.name.trim() ? "Give the place a name" : undefined)}
+        </div>
+        <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
+          units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} error={tried && !(draft.dist > 0) ? "Enter its length" : undefined} />
+        <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={save}>Save place</button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -450,7 +587,7 @@ function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; 
       <PresetChips custom={custom} onCustom={() => { setCustom(true); setCh(0); setCm(0); setTried(false); focusSoon("dur-h"); }}
         presets={[10, 25, 50, 100, 200].map((x) => ({ label: x + " h", on: h === x && mi === 0, pick: () => { setCustom(false); setPos({ h: x, mi: 0 }); } }))} />
       {custom ? (
-        <div style={{ marginTop: 18, minHeight: 150, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignContent: "start" }}>
+        <div style={{ marginTop: 18, minHeight: 150, display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10, alignContent: "start" }}>
           <NumField id="dur-h" label="Hours" value={ch} onChange={setCh} suffix="h" />
           <NumField id="dur-m" label="Minutes" value={cm} onChange={setCm} suffix="min" error={cm > 59 ? "Up to 59" : undefined} />
         </div>
@@ -534,27 +671,52 @@ const TIME_COLS = {
   hms: [{ label: "Hours", items: Array.from({ length: 24 }, (_, i) => String(i)), sep: "h" }, { label: "Minutes", items: R60, sep: "min" }, { label: "Seconds", items: R60, sep: "s" }],
   sec: [{ label: "Seconds", items: Array.from({ length: 600 }, (_, i) => String(i)), sep: "." }, { label: "Hundredths", items: Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0")), sep: "s" }],
 };
+/* preset times around the starting value: a little faster and slower, rounded to whole minutes (or half seconds for sprints) */
+function timePresets(fmt: "hms" | "sec", base: number) {
+  const snap = (t: number) => (fmt === "hms" ? Math.max(60, Math.round(t / 60) * 60) : Math.max(0.5, Math.round(t * 2) / 2));
+  return [...new Set([0.85, 0.9, 1, 1.1, 1.2].map((f) => snap(base * f)))];
+}
 function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void }) {
   const cols = TIME_COLS[fmt];
   const split = (t: number) => fmt === "hms"
     ? [Math.min(23, Math.floor(t / 3600)), Math.floor((t % 3600) / 60), Math.round(t % 60) % 60]
     : [Math.min(599, Math.floor(t)), Math.round((t % 1) * 100) % 100];
-  const [idx, setIdx] = useState(() => split(value > 0 ? value : fmt === "hms" ? 1800 : 60));
-  const total = fmt === "hms" ? idx[0] * 3600 + idx[1] * 60 + idx[2] : idx[0] + idx[1] / 100;
+  const start = value > 0 ? value : fmt === "hms" ? 1800 : 60;
+  const [presets] = useState(() => timePresets(fmt, start));
+  const [idx, setIdx] = useState(() => split(start));
+  const [custom, setCustom] = useState(false);
+  const [cv, setCv] = useState<number[]>(() => cols.map(() => 0));
+  const sum = (p: number[]) => (fmt === "hms" ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] + p[1] / 100);
+  const total = sum(custom ? cv : idx);
+  // the limit for each typed part: hours up to 23, minutes and seconds up to 59, hundredths up to 99
+  const caps = fmt === "hms" ? [23, 59, 59] : [599, 99];
+  const over = custom ? cv.map((x, k) => (x > caps[k] ? `Up to ${caps[k]}` : undefined)) : [];
+  const bad = !(total > 0) || over.some(Boolean);
   const [tried, setTried] = useState(false);
-  const save = () => { if (!(total > 0)) return setTried(true); onSave(Math.round(total * 100) / 100); onClose(); };
+  const save = () => { if (bad) return setTried(true); onSave(Math.round(total * 100) / 100); onClose(); };
+  const suffix = fmt === "hms" ? ["h", "min", "s"] : ["s", "hs"];
   return (
-    <Sheet id="time" title={title} sub={fmt === "hms" ? "Scroll hours, minutes and seconds." : "Scroll seconds and hundredths."} onClose={onClose}>
-      <div style={{ position: "relative", marginTop: 16 }}>
-        <WheelBand />
-        <div style={{ position: "relative", display: "grid", gridTemplateColumns: cols.map(() => "1fr 34px").join(" "), alignItems: "center" }}>
-          {cols.map((c, k) => (<Fragment key={c.label}>
-            <Wheel big label={c.label} items={c.items} index={idx[k]} onChange={(i) => setIdx((x) => x.map((y, j) => (j === k ? i : y)))} />
-            <span aria-hidden style={{ fontSize: 15, fontWeight: 600, color: "var(--gray)" }}>{c.sep}</span>
-          </Fragment>))}
+    <Sheet id="time" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
+      <PresetChips custom={custom} onCustom={() => { setCustom(true); setCv(cols.map(() => 0)); setTried(false); focusSoon("time-0"); }}
+        presets={presets.map((t) => ({ label: fmtTime(t), on: Math.abs(total - t) < 0.001, pick: () => { setCustom(false); setIdx(split(t)); } }))} />
+      {custom ? (
+        <div style={{ marginTop: 18, minHeight: 150, display: "grid", gridTemplateColumns: `repeat(${cols.length},minmax(0,1fr))`, gap: 10, alignContent: "start" }}>
+          {cols.map((c, k) => (
+            <NumField key={c.label} id={`time-${k}`} label={c.label} value={cv[k]} onChange={(n) => setCv((x) => x.map((y, j) => (j === k ? n : y)))} suffix={suffix[k]} error={over[k]} />
+          ))}
         </div>
-      </div>
-      {readout(total > 0 ? fmtTime(total) : null, tried && "Pick a time above 0")}
+      ) : (
+        <div style={{ position: "relative", marginTop: 12 }}>
+          <WheelBand />
+          <div style={{ position: "relative", display: "grid", gridTemplateColumns: cols.map(() => "1fr 34px").join(" "), alignItems: "center" }}>
+            {cols.map((c, k) => (<Fragment key={c.label}>
+              <Wheel big label={c.label} items={c.items} index={idx[k]} onChange={(i) => setIdx((x) => x.map((y, j) => (j === k ? i : y)))} />
+              <span aria-hidden style={{ fontSize: 15, fontWeight: 600, color: "var(--gray)" }}>{c.sep}</span>
+            </Fragment>))}
+          </div>
+        </div>
+      )}
+      {readout(!bad ? fmtTime(total) : null, tried && (over.some(Boolean) ? "Check the highlighted field" : "Pick a time above 0"))}
       <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
@@ -695,9 +857,10 @@ const goalPhoto = (id: string) => {
   // motion-blurred stride, supplied by the client
   return { src: "/img/goal-run.webp", pos: "50% 45%" };
 };
-// the spec's V1 flow: activity, goal metric, goal details (with the target date), review
-const QUESTIONS = 4;
+// activity, goal metric, goal details (with the target date), review, goal card
+const QUESTIONS = 5;
 const timeframes = [
+  { label: "1 week", days: 7 },
   { label: "3 months", days: 90 },
   { label: "6 months", days: 180 },
   { label: "End of year", days: daysUntil(new Date(2026, 11, 31)) },
@@ -716,10 +879,13 @@ function planLine(a: Activity, g: Goal, days: number) {
   if (perWeek < 1) return `About one every ${Math.max(2, Math.round(1 / perWeek))} weeks.`;
   return `About ${fmtN(Math.round(perWeek))} ${g.unit} a week.`;
 }
-// sub-label under each metric tile
+/* The distance icon follows the sport: a path on foot, a map for rides, waves on water, slopes on snow, a ruler for the rest */
+const distIcon = (a: Activity) => (a.group === "Foot" ? Path : a.group === "Cycling" ? MapTrifold : a.group === "Water" ? Waves : a.group === "Snow" ? Mountains : Ruler);
+const metricIcon = (m: Metric, a: Activity) => (m === "distance" ? distIcon(a) : METRICS[m].Icon);
 // one line on what each metric measures, in this activity's words
 const tileAbout = (m: Metric, a: Activity) => ({
-  distance: "The total distance you cover", duration: "The total time you spend active", sessions: `How many ${a.noun} you complete`, performance: "Beat a target time over a set distance",
+  distance: verbOf(a) ? `The total distance you ${verbOf(a)!.toLowerCase()}` : `The total distance across your ${a.noun}`,
+  duration: `The total time you spend on ${a.noun}`, sessions: `How many ${a.noun} you complete`, performance: "Beat a target time over a set distance",
   reps: "Repeated efforts, like 10 hill climbs", laps: "Circuits of a track or loop", steps: "The total steps you take", count: "The total skips you do", weight: "A target body weight to reach",
 })[m];
 const groups: ("All" | Group)[] = ["All", ...groupOrder];
@@ -731,7 +897,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const [dir, setDir] = useState(1);
   const [activity, setActivity] = useState("run");
   const [goal, setGoal] = useState<Goal>(() => defaultGoal(byId("run"), "distance"));
-  const [days, setDays] = useState(timeframes[2].days);
+  const [days, setDays] = useState(timeframes[3].days);
   const [custom, setCustom] = useState("");
   const [motto, setMotto] = useState("");
   const [q, setQ] = useState("");
@@ -743,7 +909,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   // goal-detail helpers: duration entry unit, reps/laps reference tab and remembered distance, saved places, performance format choice
   const [refTab, setRefTab] = useState<"dist" | "place">("dist");
   const [refDist, setRefDist] = useState<{ value: number; unit: DistUnit }>({ value: 400, unit: "m" });
-  const [places, setPlaces] = useState<Place[]>(savedPlaces);
+  const [places, setPlaces] = useState<Place[]>([]); // a first-time user has no saved places yet
+  const [newPlace, setNewPlace] = useState(false);
   // location permission for the place search: asked the first time the Location tab opens
   const [loc, setLoc] = useState<LocState>("unknown");
   const [askingLoc, setAskingLoc] = useState(false);
@@ -805,7 +972,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     setDir(d); setStep(step + d); setStuck(false);
   };
   const jump = (to: number) => { setDir(to < step ? -1 : 1); setStep(to); setStuck(false); };
-  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Review my goal", "Create goal"][step];
+  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Review my goal", "Continue", "Create goal"][step];
 
   // the card itself goes out as a 1080×1920 PNG: native share sheet where files are supported, otherwise a download
   const cardRef = useRef<HTMLDivElement>(null);
@@ -942,7 +1109,6 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                       {/* category header: icon tile, name and what it covers, count, collapse */}
                       <button data-cuelume-toggle type="button" aria-expanded={open} onClick={() => setClosed((c) => (c.includes(g) ? c.filter((x) => x !== g) : [...c, g]))}
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "2px 0 12px" }}>
-                        <span aria-hidden style={{ width: 46, height: 46, borderRadius: 14, background: "var(--blue-50)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={info.Icon} size={26} /></span>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                             <span style={{ fontSize: 17, fontWeight: 650, color: "var(--ink)" }}>{info.label}</span>
@@ -991,7 +1157,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     const info = METRICS[x], on = m === x;
                     return (
                       <button data-cuelume-select key={x} type="button" role="radio" aria-checked={on} className="mtile" onClick={() => pickMetric(x)}>
-                        <span className="mtile-ic" aria-hidden><SportIcon Icon={info.Icon} size={24} selected={on} neutral /></span>
+                        <span className="mtile-ic" aria-hidden><SportIcon Icon={metricIcon(x, act)} size={24} selected={on} neutral /></span>
                         <span className="mtile-tx"><b>{info.label}</b><small>{tileAbout(x, act)}</small></span>
                         <span className="radio" aria-hidden>{on && <Check size={12} weight="bold" />}</span>
                       </button>
@@ -1008,7 +1174,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 <p aria-live="polite" style={{ fontSize: 16, marginTop: 8, lineHeight: 1.4, color: "var(--blue)", fontWeight: 600 }}>{sentence} by {fmtDate(due)}</p>
 
                 <div style={{ marginTop: 22, display: "grid", gap: 20 }}>
-                  {m === "distance" && <SheetField label="Target distance" Icon={RouteIcon} value={goal.target > 0 ? fmtN(goal.target) : null} unit={goal.unit} empty="Set a distance" onOpen={() => setPickingDist(true)} error={shown("target")} />}
+                  {m === "distance" && <SheetField label="Target distance" Icon={distIcon(act)} value={goal.target > 0 ? fmtN(goal.target) : null} unit={goal.unit} empty="Set a distance" onOpen={() => setPickingDist(true)} error={shown("target")} />}
                   {m === "duration" && <SheetField label="Target total time" Icon={Timer} value={goal.target > 0 ? fmtHours(goal.target) : null} empty="Set a total time" onOpen={() => setPicking("dur")} error={shown("target")} />}
                   {(m === "sessions" || m === "steps" || m === "count") && (
                     <SheetField label={m === "sessions" ? `Target number of ${act.noun}` : m === "steps" ? "Target steps" : "Target skips"} Icon={M.Icon} value={goal.target > 0 ? fmtN(goal.target) : null} unit={goal.unit} empty="Set a number" onOpen={() => setPicking("count")} error={shown("target")} />
@@ -1024,12 +1190,12 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                         onOpen={() => setPicking("ref")} onClear={() => { setRefDist({ ...refDist, value: 0 }); set({ ref: { kind: "none" } }); }} />
                     ) : (
                       <PlacePicker noun={m === "reps" ? "rep" : "lap"} places={places} selected={place?.id} loc={loc} onAskLoc={() => setAskingLoc(true)}
-                        onSelect={(p) => set({ ref: p ? { kind: "place", id: p.id, name: p.name } : { kind: "none" } })} onAdd={(p) => setPlaces((ps) => [...ps, p])} />
+                        onSelect={(p) => set({ ref: p ? { kind: "place", id: p.id, name: p.name } : { kind: "none" } })} onAdd={(p) => setPlaces((ps) => [...ps, p])} onNew={() => setNewPlace(true)} />
                     )}
                     <SheetField label={m === "reps" ? "Target repetitions" : "Target laps"} Icon={M.Icon} value={goal.target > 0 ? fmtN(goal.target) : null} unit={goal.unit} empty="Set a number" onOpen={() => setPicking("count")} error={shown("target")} />
                   </>)}
                   {m === "performance" && (<>
-                    <SheetField label="Distance" Icon={RouteIcon} value={(goal.perfDist ?? 0) > 0 ? fmtN(goal.perfDist ?? 0) : null} unit={goal.perfUnit} empty="Set a distance" onOpen={() => setPicking("pdist")} error={shown("dist")} />
+                    <SheetField label="Distance" Icon={distIcon(act)} value={(goal.perfDist ?? 0) > 0 ? fmtN(goal.perfDist ?? 0) : null} unit={goal.perfUnit} empty="Set a distance" onOpen={() => setPicking("pdist")} error={shown("dist")} />
                     <div>
                       <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "Seconds (s.ss)"]]} value={goal.timeFmt ?? "hms"} onChange={(f) => { setFmtPicked(true); set({ timeFmt: f }); }} />
                       <p className="cap" style={{ marginTop: 6, lineHeight: 1.4 }}>Seconds suit short sprints (100 m, 400 m). H : M : S suits longer efforts (5 km, a marathon).</p>
@@ -1073,7 +1239,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                       <span className="cap num" style={{ letterSpacing: 0 }}>{days} days</span>
                       <CaretRight size={16} color="var(--gray)" aria-hidden />
                     </button>
-                    <div style={{ display: "flex", gap: 6, overflowX: "auto", margin: "10px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                       {timeframes.map((t) => (
                         <button data-cuelume-select key={t.label} type="button" className="chip" aria-pressed={days === t.days && !custom} onClick={() => { setDays(t.days); setCustom(""); }} style={{ height: 34, fontSize: 13, flex: "none" }}>{t.label}</button>
                       ))}
@@ -1145,8 +1311,13 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   ))}
                 </div>
 
-                <div className="sec" style={{ marginTop: 28 }}><h2 className="h2">Your goal card</h2></div>
-                <p className="cap" style={{ fontSize: 13, marginTop: -4 }}>Share it to stay accountable.</p>
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                <h1 className="title">Your goal card</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Share it to stay accountable.</p>
                 {/* 9:16 so it drops straight into an Instagram story */}
                 <motion.div ref={cardRef} initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
                   style={{ margin: "14px auto 0", width: "min(100%, 300px)", aspectRatio: "9 / 16", borderRadius: 28, padding: "20px 20px 22px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
@@ -1213,9 +1384,9 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
       <div style={{ flex: "none", padding: "14px 20px 34px", background: "#fff", borderTop: "1px solid var(--line)", display: "grid", gap: 8 }}>
         {step === 2 && tried && Object.keys(problems).length > 0 && <p className="err" role="alert" style={{ textAlign: "center" }}>Fix the highlighted field{Object.keys(problems).length > 1 ? "s" : ""} to continue.</p>}
         {/* review: Edit on the left, Create on the right, in one row */}
-        <div style={{ display: "grid", gridTemplateColumns: step === 3 ? "1fr 1.6fr" : "1fr", gap: 10 }}>
-          {step === 3 && <button data-cuelume-navigate type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
-          <button data-cuelume-tap className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 3 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
+        <div style={{ display: "grid", gridTemplateColumns: step >= 3 ? "1fr 1.6fr" : "1fr", gap: 10 }}>
+          {step >= 3 && <button data-cuelume-navigate type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
+          <button data-cuelume-tap className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 4 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
         </div>
       </div>
 
@@ -1247,6 +1418,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
             const conv = (x: number) => (u === goal.unit ? x : Math.round((u === "kg" ? x * 0.45359237 : x / 0.45359237) * 10) / 10);
             set(picking === "wt" ? { target: v, unit: u, current: conv(goal.current) } : { current: v, unit: u, target: conv(goal.target) });
           }} onClose={() => setPicking(null)} />}
+        {newPlace && <AddPlaceSheet noun={m === "reps" ? "rep" : "lap"} gps={loc === "on"} onClose={() => setNewPlace(false)}
+          onSave={(p) => { setPlaces((ps) => (ps.some((x) => x.id === p.id) ? ps : [...ps, p])); set({ ref: { kind: "place", id: p.id, name: p.name } }); setNewPlace(false); }} />}
         {askingLoc && <LocationSheet onAllow={allowLoc} onDeny={() => { setAskingLoc(false); setLoc("off"); }} />}
         {pickingDone && <DistanceSheet title="Already done" cta="Save distance" value={goal.current > 0 ? goal.current : Math.round(goal.target / 4)} unit={goal.unit}
           onSave={(v, u) => set({ current: Math.round(((v * TO_M[u as "km"]) / TO_M[goal.unit as "km"]) * 10) / 10 })} onClose={() => setPickingDone(false)} />}
