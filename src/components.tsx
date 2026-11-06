@@ -116,7 +116,7 @@ export function RouteMap({ tone = "light", draw = true, height = 200, markers = 
           {markers && kms.map(([x, y, t], i) => (
             <motion.g key={t} initial={draw ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ delay: 0.6 + i * 0.2 }}>
               <circle cx={x} cy={y} r="9.5" fill={pill.fill} />
-              <text x={x} y={y + 3.6} textAnchor="middle" fontSize="10" fontWeight="600" fill={pill.text} fontFamily="DM Sans Variable, DM Sans, system-ui">{t}</text>
+              <text x={x} y={y + 3.6} textAnchor="middle" fontSize="10" fontWeight="600" fill={pill.text} fontFamily="Inter Variable, Inter, system-ui">{t}</text>
             </motion.g>
           ))}
         </>

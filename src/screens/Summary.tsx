@@ -42,7 +42,7 @@ export default function Summary({ go }: { go: (r: Route) => void }) {
           {KM.map(([x, y, t], i) => (
             <motion.g key={t} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 + i * 0.25 }}>
               <circle cx={x} cy={y} r="24" fill="#fff" />
-              <text x={x} y={y + 8} textAnchor="middle" fontSize="22" fontWeight="700" fill="#0054FB" fontFamily="Roboto Variable, Roboto, system-ui">{t}</text>
+              <text x={x} y={y + 8} textAnchor="middle" fontSize="22" fontWeight="700" fill="#0054FB" fontFamily="Inter Variable, Inter, system-ui">{t}</text>
             </motion.g>
           ))}
         </svg>

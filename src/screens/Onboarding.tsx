@@ -97,8 +97,8 @@ function GoalRoute({ days, vals, started, Icon }: { days: number; vals: string[]
             ) : (
               <circle cx={x} cy={y} r="6" fill="#fff" />
             )}
-            <text x={x + dx} y={y + dy - 6} textAnchor={anchor} fill="#fff" fontSize="12" fontWeight="600" fontFamily="DM Sans Variable, DM Sans, system-ui">{start ? `Today, ${s.date}` : end ? `Goal, ${s.date}` : s.date}</text>
-            <text x={x + dx} y={y + dy + 8} textAnchor={anchor} fill="rgba(255,255,255,0.72)" fontSize="11" fontFamily="DM Sans Variable, DM Sans, system-ui">{start && started ? `${s.val} done` : s.val}</text>
+            <text x={x + dx} y={y + dy - 6} textAnchor={anchor} fill="#fff" fontSize="12" fontWeight="600" fontFamily="Inter Variable, Inter, system-ui">{start ? `Today, ${s.date}` : end ? `Goal, ${s.date}` : s.date}</text>
+            <text x={x + dx} y={y + dy + 8} textAnchor={anchor} fill="rgba(255,255,255,0.72)" fontSize="11" fontFamily="Inter Variable, Inter, system-ui">{start && started ? `${s.val} done` : s.val}</text>
           </motion.g>
         );
       })}
@@ -201,7 +201,7 @@ function Seg<T extends string>({ label, options, value, onChange }: { label: str
 const Note = ({ children }: { children: React.ReactNode }) => <p className="note"><Info size={17} weight="fill" aria-hidden /><span>{children}</span></p>;
 
 const placeIcon: Record<PlaceType, typeof Path | SportIconType> = { Track: TrackIcon, Hill: Mountains, Road: Path, Loop: ArrowsClockwise };
-const placeLine = (p: Place) => `${fmtN(p.dist)} ${p.unit} · ${p.type}`;
+const placeLine = (p: Place) => (p.dist > 0 ? `${fmtN(p.dist)} ${p.unit} · ${p.type}` : p.type);
 const awayText = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m away` : `${fmtN(Math.round(km * 10) / 10)} km away`);
 export type LocState = "unknown" | "locating" | "on" | "off";
 
@@ -395,7 +395,7 @@ function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "la
 
   const save = () => {
     setTried(true);
-    if (!draft.name.trim() || !(draft.dist > 0)) return;
+    if (!draft.name.trim()) return;
     const away = Math.round(Math.hypot(at.x - YOU.x, at.y - YOU.y) * KM_PER_UNIT * 10) / 10;
     const same = found && found.name === draft.name.trim() && found.dist === draft.dist && found.unit === draft.unit;
     onSave(same ? found : {
@@ -453,8 +453,8 @@ function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "la
             placeholder={noun === "lap" ? "Such as City Stadium track" : "Such as Temple hill"} aria-invalid={tried && !draft.name.trim()} style={{ height: 50 }} />
           {fieldErr(tried && !draft.name.trim() ? "Give the place a name" : undefined)}
         </div>
-        <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
-          units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} error={tried && !(draft.dist > 0) ? "Enter its length" : undefined} />
+        <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} optional value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
+          units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} />
         <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={save}>Save place</button>
       </div>
     </Sheet>
@@ -507,7 +507,10 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
   const [cTried, setCTried] = useState(false);
   useEffect(() => { if (custom) setTimeout(() => document.getElementById("dist-custom")?.focus(), 60); }, [custom]);
   const out = custom ? { v: cVal, u: cUnit } : { v, u: uName };
-  const save = () => { if (custom && !(cVal > 0)) return setCTried(true); onSave(Math.round(out.v * 10) / 10, out.u); onClose(); };
+  // a typed distance is capped at 2,000 km (or the same in mi or m)
+  const cMax = cUnit === "m" ? 2000000 : cUnit === "mi" ? 1242 : 2000;
+  const cOver = custom && cVal > cMax;
+  const save = () => { if (custom && (!(cVal > 0) || cOver)) return setCTried(true); onSave(Math.round(out.v * 10) / 10, out.u); onClose(); };
   return (
     <Sheet id="dist" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
@@ -523,7 +526,7 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
       {custom ? (
         <div style={{ marginTop: 18, minHeight: 150 }}>
           <NumField id="dist-custom" label="Your distance" value={cVal} decimals placeholder="Such as 75" onChange={setCVal}
-            units={[...DIST_UNITS]} unit={cUnit} onUnit={setCUnit} error={cTried && !(cVal > 0) ? "Enter a distance above 0" : undefined} />
+            units={[...DIST_UNITS]} unit={cUnit} onUnit={setCUnit} error={cOver ? `Up to ${fmtN(cMax)} ${cUnit}` : cTried && !(cVal > 0) ? "Enter a distance above 0" : undefined} />
         </div>
       ) : (
       <div style={{ position: "relative", marginTop: 12 }}>
@@ -539,7 +542,7 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
       </div>
       )}
       <p className="cap" aria-live="polite" style={{ textAlign: "center", marginTop: 12, fontSize: 14 }}>
-        {out.v > 0 && <><strong className="num" style={{ color: "var(--ink)", letterSpacing: 0 }}>{fmtN(out.v)} {out.u}</strong>
+        {out.v > 0 && !cOver && <><strong className="num" style={{ color: "var(--ink)", letterSpacing: 0 }}>{fmtN(out.v)} {out.u}</strong>
         {out.u !== "km" && <> · about {fmtN(Math.round((out.v * TO_M[out.u as "km"]) / 100) / 10)} km</>}</>}
       </p>
       <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
@@ -580,7 +583,7 @@ function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; 
   const [cm, setCm] = useState(0);
   const [tried, setTried] = useState(false);
   const total = custom ? ch + cm / 60 : h + MINS[mi] / 60;
-  const bad = !(total > 0) || (custom && cm > 59);
+  const bad = !(total > 0) || (custom && (cm > 59 || ch > 2000));
   const save = () => { if (bad) return setTried(true); onSave(Math.round(total * 1000) / 1000); onClose(); };
   return (
     <Sheet id="dur" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
@@ -588,7 +591,7 @@ function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; 
         presets={[10, 25, 50, 100, 200].map((x) => ({ label: x + " h", on: h === x && mi === 0, pick: () => { setCustom(false); setPos({ h: x, mi: 0 }); } }))} />
       {custom ? (
         <div style={{ marginTop: 18, minHeight: 150, display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10, alignContent: "start" }}>
-          <NumField id="dur-h" label="Hours" value={ch} onChange={setCh} suffix="h" />
+          <NumField id="dur-h" label="Hours" value={ch} onChange={setCh} suffix="h" error={ch > 2000 ? "Up to 2,000" : undefined} />
           <NumField id="dur-m" label="Minutes" value={cm} onChange={setCm} suffix="min" error={cm > 59 ? "Up to 59" : undefined} />
         </div>
       ) : (
@@ -633,7 +636,13 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
     if (custom) setCv(Math.round(((cv * a.f) / b.f) * 10) / 10); else setPos(place((v * a.f) / b.f));
     setU(to);
   };
-  const save = () => { if (!(v > 0)) return setTried(true); onSave(tenths ? Math.round(v * 10) / 10 : Math.round(v), u); onClose(); };
+  // the allowed range in whichever unit is showing (min and max are given in the starting unit)
+  const k = units ? units.find((x) => x.name === unit)!.f / units.find((x) => x.name === u)!.f : 1;
+  const lo = Math.ceil(min * k), hi = Math.floor(max * k);
+  const out = custom && cv > 0 && (cv < lo || cv > hi);
+  const rangeErr = out ? (cv > hi ? `Up to ${fmtN(hi)} ${u}` : `At least ${fmtN(lo)} ${u}`) : undefined;
+  const ph = `${fmtN(lo)}–${fmtN(hi)}`;
+  const save = () => { if (!(v > 0) || out) return setTried(true); onSave(tenths ? Math.round(v * 10) / 10 : Math.round(v), u); onClose(); };
   return (
     <Sheet id="num" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
       <PresetChips custom={custom} onCustom={() => { setCustom(true); setCv(0); setTried(false); focusSoon("num-custom"); }}
@@ -641,8 +650,8 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
       {custom ? (
         <div style={{ marginTop: 18, minHeight: 150 }}>
           {units
-            ? <NumField id="num-custom" label={title} value={cv} decimals={tenths} onChange={setCv} units={units.map((x) => x.name)} unit={u} onUnit={switchUnit} />
-            : <NumField id="num-custom" label={title} value={cv} decimals={tenths} onChange={setCv} suffix={u} />}
+            ? <NumField id="num-custom" label={title} value={cv} decimals={tenths} onChange={setCv} units={units.map((x) => x.name)} unit={u} onUnit={switchUnit} error={rangeErr} placeholder={ph} />
+            : <NumField id="num-custom" label={title} value={cv} decimals={tenths} onChange={setCv} suffix={u} error={rangeErr} placeholder={ph} />}
         </div>
       ) : (
         <div style={{ position: "relative", marginTop: 12 }}>
@@ -659,7 +668,7 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
           </div>
         </div>
       )}
-      {readout(v > 0 ? fmtN(v) + " " + u : null, tried && "Enter a number above 0")}
+      {readout(v > 0 && !out ? fmtN(v) + " " + u : null, tried && !out && "Enter a number above 0")}
       <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
@@ -1181,12 +1190,12 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   )}
                   {(m === "reps" || m === "laps") && (<>
                     <div>
-                      <span className="flabel">Reference<span className="opt">Optional</span></span>
+                      <span className="flabel">Reference</span>
                       <Seg label="Reference" options={[["dist", "Distance"], ["place", m === "laps" ? "Saved track" : "Location"]]} value={refTab}
                         onChange={(t) => { setRefTab(t); if (t === "place" && loc === "unknown") setAskingLoc(true); set({ ref: t === "dist" && refDist.value > 0 ? { kind: "dist", ...refDist } : { kind: "none" } }); }} />
                     </div>
                     {refTab === "dist" ? (
-                      <SheetField label={m === "reps" ? "Distance per rep" : "Lap distance"} optional Icon={Ruler} value={refDist.value > 0 ? fmtN(refDist.value) : null} unit={refDist.unit} empty="Add a distance"
+                      <SheetField label={m === "reps" ? "Distance per rep" : "Lap distance"} Icon={Ruler} value={refDist.value > 0 ? fmtN(refDist.value) : null} unit={refDist.unit} empty="Add a distance"
                         onOpen={() => setPicking("ref")} onClear={() => { setRefDist({ ...refDist, value: 0 }); set({ ref: { kind: "none" } }); }} />
                     ) : (
                       <PlacePicker noun={m === "reps" ? "rep" : "lap"} places={places} selected={place?.id} loc={loc} onAskLoc={() => setAskingLoc(true)}
@@ -1341,12 +1350,12 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     <span className="num">{parts.value}</span> <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap", ...(parts.unit.length > 8 && { display: "block", marginTop: 8 }) }}>{parts.unit}</span>
                   </p>
                   <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.8)", lineHeight: 1.35 }}>{sentence} by {fmtDate(due)}</p>
-                  {/* the motto as a pull quote: a large hanging opening mark, Roboto italic, a soft closing mark */}
+                  {/* the motto as a pull quote: a large hanging opening mark, Instrument Serif italic, a soft closing mark */}
                   {motto.trim() && (
                     <blockquote style={{ position: "relative", margin: "20px 0 0", padding: "4px 0 0 22px" }}>
-                      <span aria-hidden style={{ position: "absolute", left: -2, top: -10, fontWeight: 700, fontSize: 48, lineHeight: 1, color: "rgba(255,255,255,0.9)" }}>“</span>
-                      <p style={{ fontStyle: "italic", fontWeight: 500, fontSize: 17, lineHeight: 1.3, color: "#fff", textWrap: "balance" }}>
-                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 32, lineHeight: 0, color: "rgba(255,255,255,0.9)", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
+                      <span aria-hidden style={{ position: "absolute", left: -2, top: -8, fontFamily: "var(--serif)", fontSize: 58, lineHeight: 1, color: "rgba(255,255,255,0.9)" }}>“</span>
+                      <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontWeight: 400, fontSize: 22, lineHeight: 1.15, letterSpacing: "-0.005em", color: "#fff", textWrap: "balance" }}>
+                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 34, lineHeight: 0, color: "rgba(255,255,255,0.9)", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
                       </p>
                     </blockquote>
                   )}
@@ -1413,7 +1422,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
           fmt={goal.timeFmt ?? "hms"} value={picking === "ptime" ? goal.target : (goal.best ?? 0) > 0 ? goal.best ?? 0 : goal.target}
           onSave={(sec) => set(picking === "ptime" ? { target: sec } : { best: sec })} onClose={() => setPicking(null)} />}
         {(picking === "wt" || picking === "wt-now") && <NumberSheet title={picking === "wt" ? "Target weight" : "Current weight"} cta={picking === "wt" ? "Set weight" : "Save weight"}
-          value={picking === "wt" ? goal.target : goal.current} unit={goal.unit} units={[{ name: "kg", f: 1 }, { name: "lb", f: 0.45359237 }]} min={20} max={400} tenths presets={goal.unit === "lb" ? [130, 150, 170, 190] : [55, 60, 65, 70, 75]}
+          value={picking === "wt" ? goal.target : goal.current} unit={goal.unit} units={[{ name: "kg", f: 1 }, { name: "lb", f: 0.45359237 }]} min={goal.unit === "lb" ? 44 : 20} max={goal.unit === "lb" ? 880 : 400} tenths presets={goal.unit === "lb" ? [130, 150, 170, 190] : [55, 60, 65, 70, 75]}
           onSave={(v, u) => {
             const conv = (x: number) => (u === goal.unit ? x : Math.round((u === "kg" ? x * 0.45359237 : x / 0.45359237) * 10) / 10);
             set(picking === "wt" ? { target: v, unit: u, current: conv(goal.current) } : { current: v, unit: u, target: conv(goal.target) });

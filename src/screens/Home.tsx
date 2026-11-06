@@ -28,7 +28,7 @@ function GoalPath({ history, target, endLabel }: { history: number[]; target: nu
       <circle cx={last[0]} cy={last[1]} r="6" fill="#fff" stroke="rgba(255,255,255,0.35)" strokeWidth="6" paintOrder="stroke" />
       <g transform={`translate(${W - 2},${-2})`} color="#fff"><Flag size={18} weight="fill" x={-2} y={-16} /></g>
       {(endLabel ? [["Today", 0, "start"], [endLabel, W, "end"]] : [["Jan", 0, "start"], ["Today", last[0], "middle"], ["Dec", W, "end"]]).map(([t, tx, a]) => (
-        <text key={t as string} x={tx as number} y={H + 18} textAnchor={a as "start"} fontSize="11" fill="rgba(255,255,255,0.6)" fontFamily="Roboto Variable, Roboto, system-ui">{t}</text>
+        <text key={t as string} x={tx as number} y={H + 18} textAnchor={a as "start"} fontSize="11" fill="rgba(255,255,255,0.6)" fontFamily="Inter Variable, Inter, system-ui">{t}</text>
       ))}
     </svg>
   );
