@@ -22,7 +22,7 @@ const screens: { id: Route; name: string; note: string }[] = [
   { id: "welcome", name: "Welcome", note: "First open" },
   { id: "login", name: "Log in", note: "Returning member" },
   { id: "signup", name: "Sign up", note: "You, phone, OTP" },
-  { id: "onboarding", name: "Onboarding", note: "4 steps + goal card" },
+  { id: "onboarding", name: "Onboarding", note: "5 steps + goal card" },
   { id: "hello", name: "Hello", note: "Goal created" },
   { id: "pro", name: "Ennoo Pro", note: "Plans and trial" },
   { id: "home", name: "Home", note: "Goal and week" },

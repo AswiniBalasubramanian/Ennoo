@@ -866,8 +866,8 @@ const goalPhoto = (id: string) => {
   // motion-blurred stride, supplied by the client
   return { src: "/img/goal-run.webp", pos: "50% 45%" };
 };
-// activity, goal metric, goal details (with the target date), review, goal card
-const QUESTIONS = 5;
+// activity, goal metric, goal details, target date, review, goal card
+const QUESTIONS = 6;
 const timeframes = [
   { label: "1 week", days: 7 },
   { label: "3 months", days: 90 },
@@ -981,7 +981,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     setDir(d); setStep(step + d); setStuck(false);
   };
   const jump = (to: number) => { setDir(to < step ? -1 : 1); setStep(to); setStuck(false); };
-  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Review my goal", "Continue", "Create goal"][step];
+  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Continue", "Review my goal", "Continue", "Create goal"][step];
 
   // the card itself goes out as a 1080×1920 PNG: native share sheet where files are supported, otherwise a download
   const cardRef = useRef<HTMLDivElement>(null);
@@ -1239,28 +1239,59 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                         : "Progress you made before Ennoo, so it counts toward this goal."} />
                   )}
 
-                  {/* the target date: a field that opens the calendar, with quick picks underneath */}
-                  <div>
-                    <span className="flabel">Target date</span>
-                    <button data-cuelume-open type="button" className="nf" onClick={() => setPickingDate(true)} aria-label={`Target date, ${fmtDate(due)}. Change`} style={{ width: "100%", padding: "0 14px", gap: 10, cursor: "pointer" }}>
-                      <CalendarBlank size={20} color="var(--ink)" weight="duotone" aria-hidden />
-                      <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600, letterSpacing: 0 }}>{fmtDate(due)}</span>
-                      <span className="cap num" style={{ letterSpacing: 0 }}>{days} days</span>
-                      <CaretRight size={16} color="var(--gray)" aria-hidden />
-                    </button>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                      {timeframes.map((t) => (
-                        <button data-cuelume-select key={t.label} type="button" className="chip" aria-pressed={days === t.days && !custom} onClick={() => { setDays(t.days); setCustom(""); }} style={{ height: 34, fontSize: 13, flex: "none" }}>{t.label}</button>
-                      ))}
-                    </div>
-                    {planLine(act, goal, days) && <p className="cap" style={{ marginTop: 8 }}>{planLine(act, goal, days)}</p>}
-                  </div>
                 </div>
                 <div style={{ marginTop: 14 }}><Note>{note}</Note></div>
               </>
             )}
 
             {step === 3 && (
+              <>
+                <h1 className="title">When's your finish line?</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Pick a date. We'll pace every week to get you there.</p>
+                {/* the countdown leads; the calendar page carries the date; the weekly plan follows */}
+                <div className="card" aria-live="polite" style={{ position: "relative", overflow: "hidden", isolation: "isolate", marginTop: 22, padding: 16, display: "flex", alignItems: "center", gap: 16 }}>
+                  {/* brand texture: staggered Ennoo infinity loops in hairline strokes, fading out behind the text */}
+                  <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, backgroundImage: "url(/img/loop-pattern.svg)", backgroundSize: "320px 128px",
+                    WebkitMaskImage: "linear-gradient(90deg, transparent 18%, #000 78%)", maskImage: "linear-gradient(90deg, transparent 18%, #000 78%)" }} />
+                  <div aria-hidden style={{ order: 2, width: 78, flex: "none", borderRadius: 16, overflow: "hidden", border: "1px solid var(--line)", boxShadow: "0 8px 18px -12px rgba(11,18,32,0.45)", textAlign: "center", background: "#fff" }}>
+                    <div style={{ background: "var(--ink)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "5px 4px", whiteSpace: "nowrap" }}>{due.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</div>
+                    <div className="num" style={{ fontSize: 32, fontWeight: 650, lineHeight: 1, padding: "8px 0 2px", letterSpacing: "-0.03em" }}>{due.getDate()}</div>
+                    <div className="cap" style={{ fontSize: 11, paddingBottom: 7 }}>{due.toLocaleDateString("en-GB", { weekday: "short" })}</div>
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <span className="num" style={{ fontSize: 34, fontWeight: 650, lineHeight: 1, color: "var(--blue)", letterSpacing: "-0.02em" }}>{days}</span>
+                      <span style={{ fontSize: 17, fontWeight: 600 }}>{days === 1 ? "day" : "days"} to go</span>
+                    </p>
+                    {planLine(act, goal, days) && <p className="cap" style={{ marginTop: 6, lineHeight: 1.45 }}>{planLine(act, goal, days)}</p>}
+                  </div>
+                </div>
+                <div className="sec" style={{ marginTop: 24 }}><h2 className="h2">Choose a timeframe</h2></div>
+                <div role="radiogroup" aria-label="Timeframes" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {timeframes.map((t) => {
+                    const on = days === t.days && !custom, end = addDays(t.days);
+                    return (
+                      <button data-cuelume-select key={t.label} type="button" role="radio" aria-checked={on} className="card" onClick={() => { setDays(t.days); setCustom(""); }}
+                        style={{ textAlign: "left", padding: "12px 14px", borderColor: on ? "var(--blue)" : "var(--line)", background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
+                        <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: on ? "var(--blue)" : "var(--ink)" }}>{t.label}</span>
+                        <span className="cap num" style={{ letterSpacing: 0 }}>Ends {end.getFullYear() === new Date().getFullYear() ? end.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : fmtDate(end)}</span>
+                      </button>
+                    );
+                  })}
+                  {/* the sixth tile: any date from the calendar */}
+                  <button data-cuelume-open type="button" role="radio" aria-checked={!!custom} className="card" onClick={() => setPickingDate(true)}
+                    style={{ textAlign: "left", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, borderColor: custom ? "var(--blue)" : "var(--line)", background: custom ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: custom ? "var(--blue)" : "var(--ink)" }}>{custom ? "Your own date" : "Pick a date"}</span>
+                      <span className="cap num" style={{ letterSpacing: 0 }}>{custom ? `Ends ${fmtDate(due)}` : "Any day ahead"}</span>
+                    </span>
+                    <CalendarBlank size={20} weight="duotone" color="var(--blue)" aria-hidden style={{ flex: "none" }} />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {step === 4 && (
               <>
                 <h1 className="title">Review your goal{first ? `, ${first}` : ""}</h1>
                 <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Check the details, then create it.</p>
@@ -1323,7 +1354,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
               </>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <>
                 <h1 className="title">Your goal card</h1>
                 <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Share it to stay accountable.</p>
@@ -1393,9 +1424,9 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
       <div style={{ flex: "none", padding: "14px 20px 34px", background: "#fff", borderTop: "1px solid var(--line)", display: "grid", gap: 8 }}>
         {step === 2 && tried && Object.keys(problems).length > 0 && <p className="err" role="alert" style={{ textAlign: "center" }}>Fix the highlighted field{Object.keys(problems).length > 1 ? "s" : ""} to continue.</p>}
         {/* review: Edit on the left, Create on the right, in one row */}
-        <div style={{ display: "grid", gridTemplateColumns: step >= 3 ? "1fr 1.6fr" : "1fr", gap: 10 }}>
-          {step >= 3 && <button data-cuelume-navigate type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
-          <button data-cuelume-tap className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 4 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
+        <div style={{ display: "grid", gridTemplateColumns: step >= 4 ? "1fr 1.6fr" : "1fr", gap: 10 }}>
+          {step >= 4 && <button data-cuelume-navigate type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
+          <button data-cuelume-tap className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 5 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
         </div>
       </div>
 
