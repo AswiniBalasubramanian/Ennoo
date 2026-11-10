@@ -71,8 +71,6 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
       <motion.path d={WORD.oo} fill="#1F6BFF" filter="url(#glow)"
         initial={{ opacity: animate ? 0 : 0.55 }} animate={{ opacity: 0.55 }} transition={{ delay: s(1.8), duration: 1 }} />
 
-      {/* ENN sits a touch right of its traced spot so it hugs the loop */}
-      <g transform="translate(22 0)">
       {/* edge bloom behind ENN, seen only where the light is */}
       {animate && (
         <motion.g mask="url(#enn-sweep)" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
@@ -98,8 +96,6 @@ export function SplashLogo({ width = 230, animate = true }: { width?: number; an
           {[WORD.e1, WORD.e2, WORD.n1, WORD.n2].map((d) => <path key={d.slice(0, 10)} d={d} />)}
         </motion.g>
       )}
-
-      </g>
 
       {/* OO: mesh fill */}
       <motion.g clipPath="url(#oo-clip)" initial={{ opacity: animate ? 0 : 1 }} animate={{ opacity: 1 }} transition={{ delay: s(1.7), duration: 0.6 }}>

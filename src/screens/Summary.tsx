@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { play } from "cuelume";
 import { CaretLeft, ShareNetwork, Trophy, ImageSquare, Check, Target } from "@phosphor-icons/react";
 import { StatusBar, type Route } from "../components";
 import { entries } from "../data";
@@ -48,8 +47,8 @@ export default function Summary({ go }: { go: (r: Route) => void }) {
         </svg>
         <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(7,10,18,0.55) 0%, rgba(7,10,18,0) 24%, rgba(7,10,18,0) 70%, #070A12 100%)" }} />
         <header className="pad top" style={{ position: "relative", display: "flex", justifyContent: "space-between" }}>
-          <button data-cuelume-navigate className="icon-btn on-blue" aria-label="Back" onClick={() => go("home")}><CaretLeft size={20} /></button>
-          <button data-cuelume-tap className="icon-btn on-blue" aria-label="Share activity"><ShareNetwork size={19} /></button>
+          <button className="icon-btn on-blue" aria-label="Back" onClick={() => go("home")}><CaretLeft size={20} /></button>
+          <button className="icon-btn on-blue" aria-label="Share activity"><ShareNetwork size={19} /></button>
         </header>
       </div>
 
@@ -103,7 +102,7 @@ export default function Summary({ go }: { go: (r: Route) => void }) {
         <h2 className="h2" style={{ marginTop: 32 }}>How did it feel?</h2>
         <div role="radiogroup" aria-label="Perceived effort, 1 to 10" style={{ display: "grid", gridTemplateColumns: "repeat(10,1fr)", gap: 5, marginTop: 12 }}>
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <button data-cuelume-select key={n} role="radio" aria-checked={feel === n} aria-label={`${n}, ${feelWords[n]}`} onClick={() => setFeel(n)} className="num"
+            <button key={n} role="radio" aria-checked={feel === n} aria-label={`${n}, ${feelWords[n]}`} onClick={() => setFeel(n)} className="num"
               style={{ height: 40, borderRadius: 12, fontSize: 14, fontWeight: 560, letterSpacing: 0, transition: "all .2s",
                 background: n === feel ? "linear-gradient(180deg,#3D8BFF,#0054FB)" : n < feel ? "rgba(61,139,255,0.18)" : "rgba(255,255,255,0.06)",
                 color: n <= feel ? "#fff" : "rgba(255,255,255,0.5)", border: `1px solid ${n === feel ? "transparent" : "rgba(255,255,255,0.1)"}` }}>
@@ -114,13 +113,13 @@ export default function Summary({ go }: { go: (r: Route) => void }) {
         <p style={{ fontSize: 13, marginTop: 10, color: "rgba(255,255,255,0.6)" }}><span style={{ color: "#fff", fontWeight: 560 }}>{feelWords[feel]}.</span> Effort {feel} of 10</p>
 
         <label htmlFor="note" className="h2" style={{ display: "block", marginTop: 28 }}>Note to future you</label>
-        <textarea data-cuelume-type id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="What worked, what didn't, what you noticed"
+        <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="What worked, what didn't, what you noticed"
           style={{ width: "100%", marginTop: 10, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, lineHeight: 1.5, resize: "none", outlineColor: "#3D8BFF" }} />
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>Private unless you share the activity.</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "54px 1fr", gap: 10, marginTop: 22 }}>
-          <button data-cuelume-tap className="btn btn-glass" aria-label="Add photo" style={{ width: 54, height: 54, padding: 0 }}><ImageSquare size={22} /></button>
-          <button className="btn btn-blue" onClick={() => { play("success"); setSaved(true); setTimeout(() => go("timeline"), 800); }}>
+          <button className="btn btn-glass" aria-label="Add photo" style={{ width: 54, height: 54, padding: 0 }}><ImageSquare size={22} /></button>
+          <button className="btn btn-blue" onClick={() => { setSaved(true); setTimeout(() => go("timeline"), 800); }}>
             <AnimatePresence mode="wait" initial={false}>
               {saved
                 ? <motion.span key="s" initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><Check size={18} weight="bold" />Saved</motion.span>

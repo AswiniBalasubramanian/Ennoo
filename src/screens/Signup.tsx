@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { play } from "cuelume";
 import { CalendarBlank, CheckCircle, ShieldCheck } from "@phosphor-icons/react";
 import { StatusBar, GoogleG, AuthHeader, type Route } from "../components";
 import { Sheet, Wheel, WheelBand } from "../sheet";
@@ -38,7 +37,7 @@ function DobSheet({ value, onSave, onClose }: { value: Date | null; onSave: (d: 
       <p className="cap" aria-live="polite" style={{ textAlign: "center", marginTop: 12, fontSize: 14 }}>
         <strong style={{ color: "var(--ink)" }}>{fmtDob(picked)}</strong>, {ageOn(picked)} years old
       </p>
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={() => { onSave(picked); onClose(); }}>Done</button>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={() => { onSave(picked); onClose(); }}>Done</button>
     </Sheet>
   );
 }
@@ -57,8 +56,8 @@ function OtpSheet({ phone, onVerified, onClose }: { phone: string; onVerified: (
     setState("busy");
     // prototype: any code works except 000000, which shows the wrong-code state
     setTimeout(() => {
-      if (c.join("") === "000000") { setState("wrong"); play("error", { emphasis: "subtle" }); return; }
-      setState("done"); play("success"); setTimeout(onVerified, 700);
+      if (c.join("") === "000000") { setState("wrong"); return; }
+      setState("done"); setTimeout(onVerified, 700);
     }, 800);
   };
   const put = (i: number, raw: string) => {
@@ -79,7 +78,7 @@ function OtpSheet({ phone, onVerified, onClose }: { phone: string; onVerified: (
       sub={<>We sent a 6-digit code to <strong className="num" style={{ color: "var(--ink)", letterSpacing: 0 }}>{phone}</strong>.</>}>
       <div role="group" aria-label="Verification code" style={{ display: "grid", gridTemplateColumns: `repeat(${OTP_LEN}, 1fr)`, gap: 8, marginTop: 20 }}>
         {code.map((v, i) => (
-          <input data-cuelume-type key={i} ref={(el) => { refs.current[i] = el; }} inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} aria-label={`Digit ${i + 1}`}
+          <input key={i} ref={(el) => { refs.current[i] = el; }} inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} aria-label={`Digit ${i + 1}`}
             value={v} maxLength={i === 0 ? OTP_LEN : 1} disabled={state === "busy" || state === "done"} aria-invalid={state === "wrong"}
             onChange={(e) => put(i, e.target.value)} onFocus={(e) => e.target.select()}
             onKeyDown={(e) => { if (e.key === "Backspace" && !v && i > 0) refs.current[i - 1]?.focus(); if (e.key === "Enter") verify(); }}
@@ -90,9 +89,9 @@ function OtpSheet({ phone, onVerified, onClose }: { phone: string; onVerified: (
       <p role="status" style={{ minHeight: 20, marginTop: 12, fontSize: 14, textAlign: "center", color: state === "wrong" ? "#d92d20" : state === "done" ? "#067647" : "var(--gray)" }}>
         {state === "wrong" ? "That code didn't match. Check it and try again." : state === "done" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} weight="fill" />Number verified</span>
           : wait > 0 ? <>Resend code in <span className="num" style={{ letterSpacing: 0 }}>0:{String(wait).padStart(2, "0")}</span></>
-          : <button data-cuelume-tap type="button" className="link" onClick={() => { setWait(30); setCode(Array(OTP_LEN).fill("")); refs.current[0]?.focus(); }}>Resend code</button>}
+          : <button type="button" className="link" onClick={() => { setWait(30); setCode(Array(OTP_LEN).fill("")); refs.current[0]?.focus(); }}>Resend code</button>}
       </p>
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 10 }} disabled={!full || state === "done"} aria-busy={state === "busy"} onClick={() => verify()}>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 10 }} disabled={!full || state === "done"} aria-busy={state === "busy"} onClick={() => verify()}>
         {state === "busy" ? <><span className="spinner" aria-hidden />Verifying</> : "Verify and continue"}
       </button>
     </Sheet>
@@ -118,13 +117,13 @@ export default function Signup({ go, onName }: { go: (r: Route) => void; onName:
     else if (ageOn(dob) < MIN_AGE) next.dob = `You need to be at least ${MIN_AGE} to use Ennoo.`;
     if (!gender) next.gender = "Pick one, or choose Prefer not to say.";
     setErrors(next);
-    if (Object.keys(next).length) return void play("error", { emphasis: "subtle" });
+    if (Object.keys(next).length) return;
     onName(name.trim().split(/\s+/)[0]);
     setStage("phone");
   };
   const sendCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length !== cc.len) { setErrors({ phone: `Enter your ${cc.len}-digit mobile number.` }); return void play("error", { emphasis: "subtle" }); }
+    if (phone.length !== cc.len) { setErrors({ phone: `Enter your ${cc.len}-digit mobile number.` }); return; }
     setErrors({}); setSheet("otp");
   };
   const shownPhone = `${cc.cc} ${cc.len === 10 ? `${phone.slice(0, 5)} ${phone.slice(5)}` : phone}`;
@@ -152,12 +151,12 @@ export default function Signup({ go, onName }: { go: (r: Route) => void; onName:
             <div style={{ display: "grid", gap: 18, marginTop: 22 }}>
               <div className="field">
                 <label htmlFor="name">What should we call you?</label>
-                <input data-cuelume-type id="name" className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name, or a nickname" aria-invalid={!!errors.name} aria-describedby={errors.name ? "name-err" : undefined} />
+                <input id="name" className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name, or a nickname" aria-invalid={!!errors.name} aria-describedby={errors.name ? "name-err" : undefined} />
                 {errors.name && <span id="name-err" className="err" role="alert">{errors.name}</span>}
               </div>
               <div className="field">
                 <label htmlFor="dob">When is your birthday?</label>
-                <button data-cuelume-open id="dob" type="button" className="input" onClick={() => setSheet("dob")} aria-invalid={!!errors.dob} aria-describedby={errors.dob ? "dob-err" : undefined}
+                <button id="dob" type="button" className="input" onClick={() => setSheet("dob")} aria-invalid={!!errors.dob} aria-describedby={errors.dob ? "dob-err" : undefined}
                   style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", cursor: "pointer" }}>
                   <span style={{ flex: 1, color: dob ? "var(--ink)" : "var(--gray)", fontWeight: dob ? 560 : 400 }}>{dob ? fmtDob(dob) : "Pick your birthday"}</span>
                   <CalendarBlank size={20} color={dob ? "var(--ink)" : "var(--gray)"} aria-hidden />
@@ -170,7 +169,7 @@ export default function Signup({ go, onName }: { go: (r: Route) => void; onName:
                   {(["Female", "Male", "Non-binary", "Prefer not to say"] as Gender[]).map((g) => {
                     const on = gender === g;
                     return (
-                      <button data-cuelume-select key={g} type="button" role="radio" aria-checked={on} onClick={() => { setGender(g); setErrors((e) => ({ ...e, gender: undefined })); }}
+                      <button key={g} type="button" role="radio" aria-checked={on} onClick={() => { setGender(g); setErrors((e) => ({ ...e, gender: undefined })); }}
                         style={{ height: 48, borderRadius: 14, fontSize: 15, fontWeight: on ? 600 : 500, border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", color: on ? "var(--blue)" : "var(--ink)", transition: "all .2s" }}>{g}</button>
                     );
                   })}
@@ -179,14 +178,14 @@ export default function Signup({ go, onName }: { go: (r: Route) => void; onName:
               </div>
             </div>
 
-            <motion.button data-cuelume-tap type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 26 }} whileTap={{ scale: 0.98 }}>Continue</motion.button>
+            <motion.button type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 26 }} whileTap={{ scale: 0.98 }}>Continue</motion.button>
             <p className="meta" style={{ textAlign: "center", marginTop: 16 }}>
-              Already have an account? <button data-cuelume-tap data-cuelume-emphasis="subtle" type="button" className="link" onClick={() => go("login")}>Log in</button>
+              Already have an account? <button type="button" className="link" onClick={() => go("login")}>Log in</button>
             </p>
           </motion.form>
         ) : (
           <motion.form key="phone" className="pad" onSubmit={sendCode} noValidate initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            onAnimationComplete={() => phoneRef.current?.focus()} style={{ paddingBottom: 24 }}>
+            style={{ paddingBottom: 24 }}>
             <h1 className="title serif-title">{name.trim() ? `Hi ${name.trim().split(/\s+/)[0]}, add your number` : "Add your number"}</h1>
             <p className="meta" style={{ fontSize: 15, marginTop: 8 }}>We'll text you a 6-digit code to verify it. No passwords to remember.</p>
 
@@ -197,17 +196,17 @@ export default function Signup({ go, onName }: { go: (r: Route) => void; onName:
                   style={{ borderLeft: 0, borderRight: "1px solid var(--line)", order: -1 }}>
                   {CODES.map((c) => <option key={c.cc} value={c.cc}>{c.n} {c.cc}</option>)}
                 </select>
-                <input data-cuelume-type ref={phoneRef} id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" placeholder={cc.len === 10 ? "98765 43210" : "412 345 678"} value={phone}
+                <input ref={phoneRef} id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" placeholder={cc.len === 10 ? "98765 43210" : "412 345 678"} value={phone}
                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, cc.len)); if (errors.phone) setErrors({}); }} aria-invalid={!!errors.phone} aria-describedby={errors.phone ? "phone-err" : "phone-help"} style={{ letterSpacing: "0.02em" }} />
               </div>
               {errors.phone ? <span id="phone-err" className="err" role="alert">{errors.phone}</span> : <span id="phone-help" className="help" style={{ display: "flex", alignItems: "center", gap: 6 }}><ShieldCheck size={15} weight="fill" color="var(--gray)" />Only used to sign you in. We never share it.</span>}
             </div>
 
-            <motion.button data-cuelume-tap type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 22 }} whileTap={{ scale: 0.98 }}>Continue to OTP</motion.button>
+            <motion.button type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 22 }} whileTap={{ scale: 0.98 }}>Continue to OTP</motion.button>
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
               <span className="rule" style={{ flex: 1 }} /><span className="cap">or</span><span className="rule" style={{ flex: 1 }} />
             </div>
-            <button data-cuelume-tap type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => go("onboarding")}>
+            <button type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => go("onboarding")}>
               <GoogleG size={20} /> Continue with Google
             </button>
             <p className="cap" style={{ textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>

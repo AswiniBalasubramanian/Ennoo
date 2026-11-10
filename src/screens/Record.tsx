@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "motion/react";
-import { play } from "cuelume";
 import { X, Pause, Play } from "@phosphor-icons/react";
 import { StatusBar, RouteMap, type Route } from "../components";
 import { byId } from "../data";
@@ -56,7 +55,7 @@ export default function Record({ go }: { go: (r: Route) => void }) {
     <div className="body" style={{ background: "var(--blue)", color: "#fff", overflow: "hidden" }}>
       <StatusBar onBlue />
       <header className="pad top" style={{ position: "relative", zIndex: 2, display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center" }}>
-        <button data-cuelume-close className="icon-btn on-blue" aria-label="Close" onClick={() => go("home")}><X size={20} /></button>
+        <button className="icon-btn on-blue" aria-label="Close" onClick={() => go("home")}><X size={20} /></button>
         <span style={{ textAlign: "center", fontSize: 16, fontWeight: 600 }}>{title}</span>
       </header>
 
@@ -66,7 +65,7 @@ export default function Record({ go }: { go: (r: Route) => void }) {
             style={{ position: "absolute", inset: "124px 0 0 0", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 20px", scrollbarWidth: "none" }}>
               {sports.map(({ id, name, Icon }) => (
-                <button data-cuelume-select key={id} className="chip on-blue" aria-pressed={sport === id} onClick={() => setSport(id)}>
+                <button key={id} className="chip on-blue" aria-pressed={sport === id} onClick={() => setSport(id)}>
                   <Icon size={17} weight={sport === id ? "fill" : "duotone"} />{name}
                 </button>
               ))}
@@ -87,7 +86,7 @@ export default function Record({ go }: { go: (r: Route) => void }) {
                 </div>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", textAlign: "right" }}>GPS ready<br />accurate to 4 m</p>
               </div>
-              <button data-cuelume-tap data-cuelume-emphasis="strong" className="btn btn-white" style={{ height: 60, fontSize: 17 }} onClick={() => setPhase("live")}>Start {name.toLowerCase()}</button>
+              <button className="btn btn-white" style={{ height: 60, fontSize: 17 }} onClick={() => setPhase("live")}>Start {name.toLowerCase()}</button>
             </div>
           </motion.div>
         ) : (
@@ -109,8 +108,8 @@ export default function Record({ go }: { go: (r: Route) => void }) {
               <RouteMap tone="blue" height={232} markers={false} progress={Math.max(0.03, Math.min(km / 8.42, 1))} />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, padding: "0 20px 44px" }}>
-              {phase === "paused" && <HoldToFinish onDone={() => { play("success"); go("summary"); }} />}
-              <button data-cuelume-toggle aria-label={phase === "live" ? "Pause" : "Resume"} onClick={() => setPhase(phase === "live" ? "paused" : "live")}
+              {phase === "paused" && <HoldToFinish onDone={() => { go("summary"); }} />}
+              <button aria-label={phase === "live" ? "Pause" : "Resume"} onClick={() => setPhase(phase === "live" ? "paused" : "live")}
                 style={{ width: 88, height: 88, borderRadius: "50%", display: "grid", placeItems: "center", background: "#fff", color: "var(--blue)", transition: "transform .2s" }}>
                 {phase === "live" ? <Pause size={32} weight="fill" /> : <Play size={32} weight="fill" />}
               </button>

@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import { bind, setEnabled, unlock } from "cuelume";
-import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 import { TabBar, Wordmark, IconDefs, type Route } from "./components";
 import Splash from "./screens/Splash";
 import Welcome from "./screens/Welcome";
@@ -47,10 +45,6 @@ export default function App() {
   const [firstName, setFirstName] = useState("");
   const go = useCallback((r: Route) => { setRoute(r); history.replaceState(null, "", `#${r}`); }, []);
   const [handedOff, setHandedOff] = useState(false);
-  // interaction sounds: every data-cuelume-* control in the app, delegated from one listener
-  useEffect(() => bind(), []);
-  const [sound, setSound] = useState(true);
-  const toggleSound = () => { const on = !sound; setSound(on); setEnabled(on); if (on) void unlock(); };
   const leaveSplash = useCallback((r: Route) => {
     // first splash goes to the deep-linked screen; any later splash (from the screen list) goes to Welcome
     go(handedOff ? r : after);
@@ -82,14 +76,11 @@ export default function App() {
           <p>Interactive prototype. Tap through the phone, or jump to any screen. Finishing onboarding shows Home as a new member; "I already have an account" shows a returning one.</p>
           <nav className="screen-list" aria-label="Screens">
             {screens.map((s) => (
-              <button data-cuelume-navigate key={s.id} aria-current={route === s.id} onClick={() => { if (s.id === "home") setProfile(null); go(s.id); }}>
+              <button key={s.id} aria-current={route === s.id} onClick={() => { if (s.id === "home") setProfile(null); go(s.id); }}>
                 <span>{s.name}</span><span>{s.note}</span>
               </button>
             ))}
           </nav>
-          <button data-cuelume-toggle className="sound-toggle" aria-pressed={sound} onClick={toggleSound}>
-            {sound ? <SpeakerHigh size={16} /> : <SpeakerSlash size={16} />}Sound {sound ? "on" : "off"}
-          </button>
         </aside>
         <div className="phone">
           <div className="screen">

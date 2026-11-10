@@ -1,13 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, animate, useMotionValue } from "motion/react";
-import { play } from "cuelume";
 import { toBlob } from "html-to-image";
 import { ArrowLeft, ArrowRight, MagnifyingGlass, Check, CheckCircle, Target, CalendarBlank, CaretRight, CaretLeft, CaretDown, X, ImageSquare, ShareFat, Ruler, Scales, MapPin, Info, Trophy, Mountains, Path, ArrowsClockwise, Plus, Timer, NavigationArrow, DownloadSimple, MapTrifold, Waves, Crosshair } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, Wordmark, type Route } from "../components";
 import { Sheet, Wheel, WheelBand } from "../sheet";
 import { TrackIcon, type SportIconType } from "../sportIcons";
 import { activities, byId, mottos, groupInfo, groupOrder, matches, savedPlaces, nearbyPlaces, type Activity, type Group, type Place, type PlaceType } from "../data";
-import { METRICS, fmtN, fmtHours, fmtTime, refText, goalParts, goalSentence, amount, type Goal, type Metric, type DistUnit } from "../metrics";
+import { METRICS, fmtN, fmtHours, fmtTime, goalParts, goalSentence, amount, type Goal, type Metric, type DistUnit } from "../metrics";
 
 /* Empty search: a lens over an empty lane, with one-tap suggestions so the user is never stuck. */
 function EmptySearch({ q, onPick }: { q: string; onPick: (v: string) => void }) {
@@ -37,7 +36,7 @@ function EmptySearch({ q, onPick }: { q: string; onPick: (v: string) => void }) 
       <p className="meta" style={{ marginTop: 6, fontSize: 14, lineHeight: 1.5, maxWidth: "36ch" }}>Check the spelling, or try one of these.</p>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 16 }}>
         {["Run", "Yoga", "Surf", "Cycling"].map((s) => (
-          <button data-cuelume-tap key={s} type="button" className="chip" onClick={() => onPick(s)}>{s}</button>
+          <button key={s} type="button" className="chip" onClick={() => onPick(s)}>{s}</button>
         ))}
       </div>
     </motion.div>
@@ -134,7 +133,7 @@ function UnitMenu({ label, units, unit, onUnit }: { label: string; units: string
   const pick = (u: string) => { onUnit(u); setOpen(false); btn.current?.focus(); };
   return (
     <div ref={wrap} className="umenu">
-      <button ref={btn} data-cuelume-open type="button" className="umenu-btn" aria-haspopup="listbox" aria-expanded={open} aria-label={`${label}: ${unitName[unit ?? ""] ?? unit}`}
+      <button ref={btn} type="button" className="umenu-btn" aria-haspopup="listbox" aria-expanded={open} aria-label={`${label}: ${unitName[unit ?? ""] ?? unit}`}
         onClick={() => (open ? setOpen(false) : show())} onKeyDown={(e) => { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); show(); } }}>
         {unitName[unit ?? ""] ?? unit}<CaretDown size={13} weight="bold" aria-hidden style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
       </button>
@@ -151,7 +150,7 @@ function UnitMenu({ label, units, unit, onUnit }: { label: string; units: string
             {units.map((u, i) => {
               const on = u === unit;
               return (
-                <div key={u} id={`um-${u}`} role="option" aria-selected={on} data-hi={i === hi || undefined} data-cuelume-select className="umenu-opt"
+                <div key={u} id={`um-${u}`} role="option" aria-selected={on} data-hi={i === hi || undefined} className="umenu-opt"
                   onPointerEnter={() => setHi(i)} onClick={() => pick(u)}>
                   <span>{unitName[u] ?? u}</span>{on && <Check size={15} weight="bold" aria-hidden />}
                 </div>
@@ -177,7 +176,7 @@ function NumField({ id, label, optional, value, onChange, decimals, suffix, unit
       <label className="flabel" htmlFor={id}>{label}{optional && <span className="opt">Optional</span>}</label>
       <div style={{ position: "relative" }}>
       <div className="nf" data-invalid={error ? "true" : undefined}>
-        <input data-cuelume-type id={id} inputMode={decimals ? "decimal" : "numeric"} placeholder={placeholder ?? "0"} value={text} aria-invalid={!!error}
+        <input id={id} inputMode={decimals ? "decimal" : "numeric"} placeholder={placeholder ?? "0"} value={text} aria-invalid={!!error}
           onChange={(e) => { const t = clean(e.target.value, decimals); setText(t); onChange(Number(t) || 0); }} />
         {units && onUnit
           ? <UnitMenu label={`${label} unit`} units={units} unit={unit} onUnit={onUnit} />
@@ -194,7 +193,7 @@ type TimeFmt = "hms" | "sec";
 function Seg<T extends string>({ label, options, value, onChange }: { label: string; options: [T, string][]; value: T; onChange: (v: T) => void }) {
   return (
     <div className="seg" role="radiogroup" aria-label={label}>
-      {options.map(([v, t]) => <button data-cuelume-select key={v} type="button" role="radio" aria-checked={value === v} onClick={() => onChange(v)}>{t}</button>)}
+      {options.map(([v, t]) => <button key={v} type="button" role="radio" aria-checked={value === v} onClick={() => onChange(v)}>{t}</button>)}
     </div>
   );
 }
@@ -238,7 +237,7 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAs
   const row = (p: Place) => {
     const on = p.id === selected;
     return (
-      <button data-cuelume-select key={p.id} type="button" role="radio" aria-checked={on} onClick={() => pick(p, on)}
+      <button key={p.id} type="button" role="radio" aria-checked={on} onClick={() => pick(p, on)}
         style={{ display: "flex", alignItems: "center", gap: 12, padding: 8, paddingRight: 12, borderRadius: 16, textAlign: "left", border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
         <PlaceThumb p={p} on={on} />
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -256,9 +255,9 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAs
       <span className="flabel">{noun === "lap" ? "Find a track" : "Find a location"}</span>
       <div style={{ position: "relative" }}>
         <MagnifyingGlass size={17} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 15 }} />
-        <input data-cuelume-type type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={gps ? "Search places near you" : "Search saved places"} aria-label={gps ? "Search places near you" : "Search saved places"}
+        <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={gps ? "Search places near you" : "Search saved places"} aria-label={gps ? "Search places near you" : "Search saved places"}
           style={{ height: 46, paddingLeft: 40, paddingRight: 52, background: "var(--bg)", borderColor: "transparent" }} />
-        <button data-cuelume-open type="button" aria-label="Add a place on the map" onClick={onNew}
+        <button type="button" aria-label="Add a place on the map" onClick={onNew}
           style={{ position: "absolute", right: 4, top: 4, width: 38, height: 38, borderRadius: 10, background: "transparent", color: "var(--blue)", display: "grid", placeItems: "center" }}>
           <span aria-hidden style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 1, background: "var(--line)" }} />
           <Plus size={20} weight="regular" />
@@ -280,14 +279,14 @@ function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAs
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, padding: "10px 12px", borderRadius: 14, background: "var(--bg)" }}>
           <MapPin size={18} color="var(--gray)" aria-hidden />
           <span style={{ flex: 1, fontSize: 13, color: "#344054", lineHeight: 1.35 }}>Turn on location to find tracks and hills near you.</span>
-          <button data-cuelume-open type="button" className="link" style={{ fontSize: 13, flex: "none" }} onClick={onAskLoc}>Turn on</button>
+          <button type="button" className="link" style={{ fontSize: 13, flex: "none" }} onClick={onAskLoc}>Turn on</button>
         </div>
       )}
 
       <div role="radiogroup" aria-label="Places" style={{ display: "grid", gap: 8, marginTop: 10 }}>
         {loc === "locating" || searching ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (<>
           {gps && !term && (
-            <button data-cuelume-open type="button" onClick={onNew}
+            <button type="button" onClick={onNew}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: 8, paddingRight: 12, borderRadius: 16, textAlign: "left", border: "1.5px solid var(--line)", background: "#fff" }}>
               <span aria-hidden style={{ position: "relative", width: 52, height: 52, borderRadius: 12, flex: "none", overflow: "hidden", background: "var(--blue-50)" }}>
                 <span className="gps-pulse" style={{ position: "absolute", left: "50%", top: "50%", transform: "scale(0.8)" }} />
@@ -427,7 +426,7 @@ function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "la
         <span aria-hidden style={{ position: "absolute", left: "50%", top: "50%", width: 14, height: 5, margin: "-2px 0 0 -7px", borderRadius: "50%", background: "rgba(11,18,32,0.28)", transform: `scale(${lift ? 0.7 : 1})`, transition: "transform .2s" }} />
         <MapPin aria-hidden size={40} weight="fill" color="var(--blue)"
           style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -20, marginTop: -38, filter: "drop-shadow(0 4px 6px rgba(0,84,251,0.35))", transform: `translateY(${lift ? -8 : 0}px)`, transition: "transform .2s var(--ease)", pointerEvents: "none" }} />
-        <button data-cuelume-tap type="button" aria-label={gps ? "Back to my location" : "Back to the start"} onClick={() => panTo(YOU.x, YOU.y)}
+        <button type="button" aria-label={gps ? "Back to my location" : "Back to the start"} onClick={() => panTo(YOU.x, YOU.y)}
           style={{ position: "absolute", right: 10, bottom: 10, width: 40, height: 40, borderRadius: 12, background: "#fff", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(11,18,32,0.18)", color: "var(--blue)" }}>
           <Crosshair size={20} weight="bold" />
         </button>
@@ -449,13 +448,13 @@ function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "la
       <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
         <div>
           <label className="flabel" htmlFor="pl-name">Name</label>
-          <input data-cuelume-type id="pl-name" className="input" value={draft.name} maxLength={40} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          <input id="pl-name" className="input" value={draft.name} maxLength={40} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder={noun === "lap" ? "Such as City Stadium track" : "Such as Temple hill"} aria-invalid={tried && !draft.name.trim()} style={{ height: 50 }} />
           {fieldErr(tried && !draft.name.trim() ? "Give the place a name" : undefined)}
         </div>
         <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} optional value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
           units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} />
-        <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={save}>Save place</button>
+        <button type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={save}>Save place</button>
       </div>
     </Sheet>
   );
@@ -473,9 +472,9 @@ function LocationSheet({ onAllow, onDeny }: { onAllow: () => void; onDeny: () =>
         We use it to find tracks, hills and loops near you and show how far each one is. It's only used while you're picking a place.
       </p>
       <div style={{ display: "grid", gap: 8, marginTop: 18 }}>
-        <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={onAllow}>Allow while using Ennoo</button>
-        <button data-cuelume-tap type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={onAllow}>Allow once</button>
-        <button data-cuelume-close type="button" className="btn" style={{ width: "100%", height: 44, background: "transparent", color: "var(--gray)" }} onClick={onDeny}>Don't allow</button>
+        <button type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={onAllow}>Allow while using Ennoo</button>
+        <button type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={onAllow}>Allow once</button>
+        <button type="button" className="btn" style={{ width: "100%", height: 44, background: "transparent", color: "var(--gray)" }} onClick={onDeny}>Don't allow</button>
       </div>
     </Sheet>
   );
@@ -514,11 +513,11 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
   return (
     <Sheet id="dist" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
-        <button data-cuelume-select type="button" className="chip" aria-pressed={custom} onClick={() => { setCustom(true); setCVal(0); setCUnit(uName); setCTried(false); }} style={{ flex: "none", height: 34, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 5 }}>
+        <button type="button" className="chip" aria-pressed={custom} onClick={() => { setCustom(true); setCVal(0); setCUnit(uName); setCTried(false); }} style={{ flex: "none", height: 34, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 5 }}>
           <Plus size={13} weight="bold" aria-hidden />Custom
         </button>
         {presetsFor(uName).map((p) => (
-          <button data-cuelume-select key={p} type="button" className="chip" aria-pressed={!custom && v === p} onClick={() => { setCustom(false); setPos(place(p, uName)); }} style={{ flex: "none", height: 34, fontSize: 13 }}>
+          <button key={p} type="button" className="chip" aria-pressed={!custom && v === p} onClick={() => { setCustom(false); setPos(place(p, uName)); }} style={{ flex: "none", height: 34, fontSize: 13 }}>
             <span className="num" style={{ letterSpacing: 0 }}>{fmtN(p)} {uName}</span>
           </button>
         ))}
@@ -545,7 +544,7 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
         {out.v > 0 && !cOver && <><strong className="num" style={{ color: "var(--ink)", letterSpacing: 0 }}>{fmtN(out.v)} {out.u}</strong>
         {out.u !== "km" && <> · about {fmtN(Math.round((out.v * TO_M[out.u as "km"]) / 100) / 10)} km</>}</>}
       </p>
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
 }
@@ -554,11 +553,11 @@ function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance"
 function PresetChips({ custom, onCustom, presets }: { custom: boolean; onCustom: () => void; presets: { label: string; on: boolean; pick: () => void }[] }) {
   return (
     <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
-      <button data-cuelume-select type="button" className="chip" aria-pressed={custom} onClick={onCustom} style={{ flex: "none", height: 34, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 5 }}>
+      <button type="button" className="chip" aria-pressed={custom} onClick={onCustom} style={{ flex: "none", height: 34, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 5 }}>
         <Plus size={13} weight="bold" aria-hidden />Custom
       </button>
       {presets.map((x) => (
-        <button data-cuelume-select key={x.label} type="button" className="chip" aria-pressed={!custom && x.on} onClick={x.pick} style={{ flex: "none", height: 34, fontSize: 13 }}>
+        <button key={x.label} type="button" className="chip" aria-pressed={!custom && x.on} onClick={x.pick} style={{ flex: "none", height: 34, fontSize: 13 }}>
           <span className="num" style={{ letterSpacing: 0 }}>{x.label}</span>
         </button>
       ))}
@@ -606,7 +605,7 @@ function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; 
         </div>
       )}
       {readout(!bad ? fmtHours(total) : null, tried && "Enter a time above 0")}
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
 }
@@ -669,7 +668,7 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
         </div>
       )}
       {readout(v > 0 && !out ? fmtN(v) + " " + u : null, tried && !out && "Enter a number above 0")}
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
 }
@@ -726,7 +725,7 @@ function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string;
         </div>
       )}
       {readout(!bad ? fmtTime(total) : null, tried && (over.some(Boolean) ? "Check the highlighted field" : "Pick a time above 0"))}
-      <button data-cuelume-tap type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
     </Sheet>
   );
 }
@@ -739,7 +738,7 @@ function SheetField({ label, optional, Icon, value, unit, empty, onOpen, onClear
   return (
     <div>
       <span className="flabel">{label}{optional && <span className="opt">Optional</span>}</span>
-      <button data-cuelume-open type="button" className="nf" onClick={onOpen} aria-invalid={!!error} data-invalid={error ? "true" : undefined}
+      <button type="button" className="nf" onClick={onOpen} aria-invalid={!!error} data-invalid={error ? "true" : undefined}
         aria-label={value ? `${label}, ${value}${unit ? " " + unit : ""}. Change` : `${label}. ${empty}`} style={{ width: "100%", padding: "0 14px", gap: 10, cursor: "pointer", height: 60 }}>
         <SportIcon Icon={Icon} size={24} neutral />
         {value
@@ -749,7 +748,7 @@ function SheetField({ label, optional, Icon, value, unit, empty, onOpen, onClear
         <CaretRight size={16} color="var(--gray)" aria-hidden />
       </button>
       {error ? fieldErr(error) : (help || (value && onClear)) ? (
-        <p className="cap" style={{ marginTop: 6 }}>{help}{value && onClear && <>{help ? " " : ""}<button data-cuelume-tap type="button" className="link" style={{ fontSize: 13 }} onClick={onClear}>Clear</button></>}</p>
+        <p className="cap" style={{ marginTop: 6 }}>{help}{value && onClear && <>{help ? " " : ""}<button type="button" className="link" style={{ fontSize: 13 }} onClick={onClear}>Clear</button></>}</p>
       ) : null}
     </div>
   );
@@ -778,9 +777,9 @@ function DateSheet({ value, onSave, onClose }: { value: Date; onSave: (d: Date) 
         <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 16px" }} />
         <h2 id="date-title" className="h2" style={{ fontSize: 18 }}>Pick your deadline</h2>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
-          <button data-cuelume-navigate type="button" className="icon-btn" aria-label="Previous month" onClick={() => shift(-1)} disabled={!canPrev} style={{ opacity: canPrev ? 1 : 0.35 }}><CaretLeft size={18} weight="bold" /></button>
+          <button type="button" className="icon-btn" aria-label="Previous month" onClick={() => shift(-1)} disabled={!canPrev} style={{ opacity: canPrev ? 1 : 0.35 }}><CaretLeft size={18} weight="bold" /></button>
           <span aria-live="polite" style={{ fontSize: 16, fontWeight: 600 }}>{month.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</span>
-          <button data-cuelume-navigate type="button" className="icon-btn" aria-label="Next month" onClick={() => shift(1)}><CaretRight size={18} weight="bold" /></button>
+          <button type="button" className="icon-btn" aria-label="Next month" onClick={() => shift(1)}><CaretRight size={18} weight="bold" /></button>
         </div>
         <div role="grid" aria-label="Calendar" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4, marginTop: 12, textAlign: "center" }}>
           {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="cap" style={{ fontSize: 12, fontWeight: 600, paddingBottom: 6 }}>{d}</span>)}
@@ -788,7 +787,7 @@ function DateSheet({ value, onSave, onClose }: { value: Date; onSave: (d: Date) 
             if (!d) return <span key={`e${i}`} />;
             const off = d < first, on = sameDay(d, sel), today = sameDay(d, TODAY);
             return (
-              <button data-cuelume-select key={i} type="button" disabled={off} aria-pressed={on} aria-label={fmtDate(d)} onClick={() => setSel(d)}
+              <button key={i} type="button" disabled={off} aria-pressed={on} aria-label={fmtDate(d)} onClick={() => setSel(d)}
                 className="num" style={{ justifySelf: "center", width: 40, height: 40, borderRadius: "50%", fontSize: 15, fontWeight: on ? 600 : 500, letterSpacing: 0,
                   background: on ? "var(--blue)" : "transparent", color: on ? "#fff" : off ? "var(--gray-2)" : "var(--ink)",
                   boxShadow: today && !on ? "inset 0 0 0 1.5px var(--blue-100)" : "none", cursor: off ? "default" : "pointer", transition: "background .15s" }}>
@@ -801,8 +800,8 @@ function DateSheet({ value, onSave, onClose }: { value: Date; onSave: (d: Date) 
           <strong style={{ color: "var(--ink)" }}>{fmtDate(sel)}</strong>, {daysUntil(sel)} days from today
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 14 }}>
-          <button data-cuelume-close type="button" className="btn btn-soft" onClick={onClose}>Cancel</button>
-          <button data-cuelume-tap type="button" className="btn btn-blue" onClick={() => { onSave(sel); onClose(); }}>Set deadline</button>
+          <button type="button" className="btn btn-soft" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-blue" onClick={() => { onSave(sel); onClose(); }}>Set deadline</button>
         </div>
       </motion.div>
     </motion.div>
@@ -849,8 +848,16 @@ function defaultGoal(a: Activity, metric: Metric): Goal {
       if (id === "swim") return { metric, target: 210, current: 0, unit: "s", perfDist: 200, perfUnit: "m", timeFmt: "hms" };
       if (id === "row" || id === "vrow") return { metric, target: 480, current: 0, unit: "s", perfDist: 2000, perfUnit: "m", timeFmt: "hms" };
       return { metric, target: 1800, current: 0, unit: "s", perfDist: 5, perfUnit: "km", timeFmt: "hms" };
-    case "reps": return { metric, target: 10, current: 0, unit: "reps", ref: { kind: "dist", value: 400, unit: "m" } };
-    case "laps": return { metric, target: 25, current: 0, unit: "laps", ref: { kind: "dist", value: 400, unit: "m" } };
+    // a believable distance per rep / lap for each kind of sport (track, pool, road loop, ski trail)
+    case "reps": {
+      const ref = id === "swim" ? { value: 100, unit: "m" as DistUnit } : g === "Cycling" ? { value: 2, unit: "km" as DistUnit } : id === "stairs" ? { value: 50, unit: "m" as DistUnit } : id === "climb" ? { value: 20, unit: "m" as DistUnit }
+        : g === "Water" || g === "Snow" || id === "skate" || id === "rollerski" ? { value: 500, unit: "m" as DistUnit } : { value: 400, unit: "m" as DistUnit };
+      return { metric, target: 10, current: 0, unit: "reps", ref: { kind: "dist", ...ref } };
+    }
+    case "laps": {
+      const ref = id === "swim" ? { value: 25, unit: "m" as DistUnit } : g === "Cycling" ? { value: 5, unit: "km" as DistUnit } : g === "Water" || g === "Snow" || id === "skate" || id === "rollerski" ? { value: 1, unit: "km" as DistUnit } : { value: 400, unit: "m" as DistUnit };
+      return { metric, target: 25, current: 0, unit: "laps", ref: { kind: "dist", ...ref } };
+    }
     case "steps": return { metric, target: id === "walk" ? 1000000 : g === "Fitness" ? 100000 : 500000, current: 0, unit: "steps" };
     case "count": return { metric, target: 10000, current: 0, unit: "skips" };
     case "weight": return { metric, target: 65, current: 72, unit: "kg" };
@@ -950,7 +957,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const sections = groupOrder.map((g) => ({ g, items: list.filter((a) => a.group === g) })).filter((s) => s.items.length);
 
   const reset = (a: Activity, metric: Metric) => {
-    setGoal(defaultGoal(a, metric)); setRefTab("dist"); setRefDist({ value: 400, unit: "m" }); setFmtPicked(false); setTried(false);
+    const dg = defaultGoal(a, metric); setGoal(dg); setRefTab("dist"); setRefDist(dg.ref?.kind === "dist" ? { value: dg.ref.value, unit: dg.ref.unit } : { value: 400, unit: "m" }); setFmtPicked(false); setTried(false);
   };
   const pick = (id: string) => { if (id !== activity) { setActivity(id); reset(byId(id), byId(id).metrics[0]); } };
   const pickMetric = (x: Metric) => { if (x !== m) reset(act, x); };
@@ -973,15 +980,15 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
 
   const move = (d: number) => {
     if (step + d < 0) return go("signup");
-    if (d > 0 && step === 2 && Object.keys(problems).length) { setTried(true); play("error", { emphasis: "subtle" }); return; }
+    if (d > 0 && step === 2 && Object.keys(problems).length) { setTried(true); return; }
     if (step + d >= QUESTIONS) {
-      play("success");
+      
       return onDone({ name: first, activity, goal, target: goal.target, current: goal.current, unit: m === "duration" ? "h" : goal.unit, due: fmtDate(due), daysLeft: days, motto: motto.trim() });
     }
     setDir(d); setStep(step + d); setStuck(false);
   };
   const jump = (to: number) => { setDir(to < step ? -1 : 1); setStep(to); setStuck(false); };
-  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Continue", "Review my goal", "Continue", "Create goal"][step];
+  const cta = [`Continue with ${act.name}`, `Continue with ${M.label.toLowerCase()}`, "Continue", "Continue", "Continue", "Create goal"][step];
 
   // the card itself goes out as a 1080×1920 PNG: native share sheet where files are supported, otherwise a download
   const cardRef = useRef<HTMLDivElement>(null);
@@ -1012,7 +1019,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
         await navigator.share({ files: [file], title: "My Ennoo goal", text: `My Ennoo goal: ${sentence} by ${fmtDate(due)}.` });
         setSharing("idle");
       } else {
-        saveFile(file); play("success", { emphasis: "subtle" }); setSharing("saved"); setTimeout(() => setSharing("idle"), 2200);
+        saveFile(file); setSharing("saved"); setTimeout(() => setSharing("idle"), 2200);
       }
     } catch { setSharing("idle"); /* share sheet dismissed */ }
   };
@@ -1023,7 +1030,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     try {
       const file = await renderCard();
       if (!file) return setSaving("idle");
-      saveFile(file); play("success", { emphasis: "subtle" }); setSaving("saved"); setTimeout(() => setSaving("idle"), 2200);
+      saveFile(file); setSaving("saved"); setTimeout(() => setSaving("idle"), 2200);
     } catch { setSaving("idle"); }
   };
   const [pickingDate, setPickingDate] = useState(false);
@@ -1042,7 +1049,6 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
     m === "performance" ? (i === 4 ? fmtTime(goal.target) : i === 0 && goal.best ? `best ${fmtTime(goal.best)}` : "")
       : m === "weight" ? `${fmtN(Math.round((goal.current + ((goal.target - goal.current) * i) / 4) * 10) / 10)} ${goal.unit}`
       : amount(goal, m === "duration" ? Math.round((goal.target * i) / 4 * 2) / 2 : Math.round((goal.target * i) / 4)));
-  const targetText = m === "performance" ? `${fmtN(goal.perfDist ?? 0)} ${goal.perfUnit} in ${fmtTime(goal.target)}` : m === "duration" ? fmtHours(goal.target) : `${fmtN(goal.target)} ${goal.unit}`;
   const note = {
     distance: `All your recorded ${actLower} distance is added to this goal.`,
     duration: `All your recorded ${actLower} time is added to this goal.`,
@@ -1064,7 +1070,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
         filter: "blur(18px)" }} />
       <StatusBar />
       <header className="pad top" style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", gap: 16, flex: "none" }}>
-        <button data-cuelume-navigate className="icon-btn" aria-label="Back" onClick={() => move(-1)}><ArrowLeft size={20} /></button>
+        <button className="icon-btn" aria-label="Back" onClick={() => move(-1)}><ArrowLeft size={20} /></button>
         <div role="progressbar" aria-valuemin={1} aria-valuemax={QUESTIONS} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of ${QUESTIONS}`} style={{ display: "grid", gridTemplateColumns: `repeat(${QUESTIONS},1fr)`, gap: 5, width: 132, justifySelf: "center" }}>
           {Array.from({ length: QUESTIONS }, (_, i) => (
             <span key={i} style={{ height: 4, borderRadius: 2, background: "#fff", boxShadow: "inset 0 0 0 1px rgba(11,18,32,0.08)", overflow: "hidden" }}>
@@ -1091,11 +1097,11 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 <div style={{ ...band(stuck), top: titleH - 24, zIndex: 2, margin: "0 -20px", padding: "20px 20px 12px", boxShadow: stuck ? "0 1px 0 var(--line)" : "none" }}>
                 <div style={{ position: "relative" }}>
                   <MagnifyingGlass size={18} color="var(--gray)" style={{ position: "absolute", left: 16, top: 18 }} />
-                  <input data-cuelume-type ref={searchRef} type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }}
+                  <input ref={searchRef} type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }}
                     placeholder={`Search all ${activities.length} activities`} aria-label="Search activities" style={{ paddingLeft: 44, paddingRight: q ? 48 : 16, background: "var(--bg)", borderColor: "transparent" }} />
                   <AnimatePresence>
                     {q && (
-                      <motion.button data-cuelume-close key="clear" type="button" aria-label="Clear search" onClick={() => search("")}
+                      <motion.button key="clear" type="button" aria-label="Clear search" onClick={() => search("")}
                         initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={{ duration: 0.15 }}
                         style={{ position: "absolute", right: 3, top: 3, width: 44, height: 44, display: "grid", placeItems: "center", borderRadius: 12 }}>
                         <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--gray)", color: "#fff", display: "grid", placeItems: "center" }}><X size={12} weight="bold" /></span>
@@ -1105,7 +1111,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                 </div>
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "14px -20px 0", padding: "0 20px", scrollbarWidth: "none" }}>
                   {groups.map((g) => (
-                    <button data-cuelume-select key={g} className="chip" aria-pressed={group === g} onClick={() => setGroup(g)}>
+                    <button key={g} className="chip" aria-pressed={group === g} onClick={() => setGroup(g)}>
                       {g === "All" ? "All" : groupInfo[g].label}<span style={{ opacity: 0.6 }} className="num">{g === "All" ? activities.length : activities.filter((a) => a.group === g).length}</span>
                     </button>
                   ))}
@@ -1116,7 +1122,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   return (
                     <section key={g} style={{ marginTop: si ? 26 : 12 }}>
                       {/* category header: icon tile, name and what it covers, count, collapse */}
-                      <button data-cuelume-toggle type="button" aria-expanded={open} onClick={() => setClosed((c) => (c.includes(g) ? c.filter((x) => x !== g) : [...c, g]))}
+                      <button type="button" aria-expanded={open} onClick={() => setClosed((c) => (c.includes(g) ? c.filter((x) => x !== g) : [...c, g]))}
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "2px 0 12px" }}>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -1132,7 +1138,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                           {items.map(({ id, name, Icon }) => {
                             const on = id === activity;
                             return (
-                              <button data-cuelume-select key={id} role="radio" aria-checked={on} onClick={() => pick(id)}
+                              <button key={id} role="radio" aria-checked={on} onClick={() => pick(id)}
                                 style={{ position: "relative", minHeight: 104, borderRadius: 20, display: "grid", placeItems: "center", alignContent: "center", gap: 10, fontSize: 13, fontWeight: on ? 600 : 500, padding: "12px 6px", textAlign: "center", lineHeight: 1.25,
                                   background: on ? "var(--blue-50)" : "var(--white)", color: on ? "var(--blue)" : "var(--ink)", border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, transition: "all .2s" }}>
                                 <SportIcon Icon={Icon} size={34} selected={on} />
@@ -1165,7 +1171,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   {act.metrics.map((x) => {
                     const info = METRICS[x], on = m === x;
                     return (
-                      <button data-cuelume-select key={x} type="button" role="radio" aria-checked={on} className="mtile" onClick={() => pickMetric(x)}>
+                      <button key={x} type="button" role="radio" aria-checked={on} className="mtile" onClick={() => pickMetric(x)}>
                         <span className="mtile-ic" aria-hidden><SportIcon Icon={metricIcon(x, act)} size={24} selected={on} neutral /></span>
                         <span className="mtile-tx"><b>{info.label}</b><small>{tileAbout(x, act)}</small></span>
                         <span className="radio" aria-hidden>{on && <Check size={12} weight="bold" />}</span>
@@ -1271,7 +1277,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   {timeframes.map((t) => {
                     const on = days === t.days && !custom, end = addDays(t.days);
                     return (
-                      <button data-cuelume-select key={t.label} type="button" role="radio" aria-checked={on} className="card" onClick={() => { setDays(t.days); setCustom(""); }}
+                      <button key={t.label} type="button" role="radio" aria-checked={on} className="card" onClick={() => { setDays(t.days); setCustom(""); }}
                         style={{ textAlign: "left", padding: "12px 14px", borderColor: on ? "var(--blue)" : "var(--line)", background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
                         <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: on ? "var(--blue)" : "var(--ink)" }}>{t.label}</span>
                         <span className="cap num" style={{ letterSpacing: 0 }}>Ends {end.getFullYear() === new Date().getFullYear() ? end.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : fmtDate(end)}</span>
@@ -1279,7 +1285,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                     );
                   })}
                   {/* the sixth tile: any date from the calendar */}
-                  <button data-cuelume-open type="button" role="radio" aria-checked={!!custom} className="card" onClick={() => setPickingDate(true)}
+                  <button type="button" role="radio" aria-checked={!!custom} className="card" onClick={() => setPickingDate(true)}
                     style={{ textAlign: "left", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, borderColor: custom ? "var(--blue)" : "var(--line)", background: custom ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: custom ? "var(--blue)" : "var(--ink)" }}>{custom ? "Your own date" : "Pick a date"}</span>
@@ -1293,125 +1299,107 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
 
             {step === 4 && (
               <>
-                <h1 className="title">Review your goal{first ? `, ${first}` : ""}</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Check the details, then create it.</p>
-                {/* summary: the goal as a sentence, then every choice as a row */}
-                <div className="card" style={{ marginTop: 18, overflow: "hidden", borderRadius: 24 }}>
-                  {/* photo hero: the chosen place, or the sport's world, graded into brand blue */}
-                  <div style={{ position: "relative", minHeight: 214, padding: 16, display: "flex", flexDirection: "column", justifyContent: "space-between", color: "#fff", isolation: "isolate" }}>
-                    <img src={place?.img ?? goalPhoto(activity).src} alt="" aria-hidden
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: place?.img ? "50% 50%" : goalPhoto(activity).pos, zIndex: -2, filter: "saturate(1.1)" }} />
-                    <span aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, background: "linear-gradient(180deg, rgba(3,11,36,0.15) 0%, rgba(3,11,36,0.35) 40%, rgba(0,40,140,0.88) 100%)" }} />
-                    <span style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 12px 5px 5px", borderRadius: 999, background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.28)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", fontSize: 13, fontWeight: 600 }}>
-                      <span aria-hidden style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", display: "grid", placeItems: "center" }}><SportIcon Icon={act.Icon} size={18} /></span>
-                      {act.name} · {M.label} goal
-                    </span>
-                    <div>
-                      <p style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.015em", textWrap: "balance", textShadow: "0 1px 12px rgba(0,0,0,0.25)" }}>{sentence}</p>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginTop: 14, borderRadius: 14, background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.22)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
-                        {[["Target", targetText], ["By", fmtDate(due).replace(/ \d{4}$/, "")], ["Days", String(days)]].map(([l, v], i) => (
-                          <span key={l} style={{ padding: "8px 10px", borderLeft: i ? "1px solid rgba(255,255,255,0.2)" : "none", minWidth: 0 }}>
-                            <span style={{ display: "block", fontSize: 11, opacity: 0.75, fontWeight: 500 }}>{l}</span>
-                            <span className="num" style={{ display: "block", fontSize: 14, fontWeight: 650, letterSpacing: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {([
-                    // the hero already shows the metric and the target; performance targets are too long for its strip
-                    ...(m === "performance" ? [[Target, "Target", targetText, ""]] : []),
-                    ...(goal.ref?.kind === "dist" ? [[Ruler, "Reference", `${refText(goal.ref)} (per ${m === "reps" ? "rep" : "lap"})`, ""]] : []),
-                    ...(place ? [[MapPin, "Location", place.name, placeLine(place)]] : []),
-                    ...(m === "performance" ? [[Trophy, "Current best", goal.best ? fmtTime(goal.best) : "Not set", ""]] : []),
-                    ...(m === "weight" ? [[Scales, "Current weight", `${fmtN(goal.current)} ${goal.unit}`, ""]] : []),
-                    ...(m !== "weight" && m !== "performance" && goal.current > 0 ? [[Check, "Already done", `${fmtN(Math.round(goal.current * 10) / 10)} ${m === "duration" ? "h" : goal.unit}`, ""]] : []),
-                    [CalendarBlank, "Target date", fmtDate(due), `${days} days from today`],
-                  ] as [typeof Target | SportIconType, string, string, string][]).map(([Icon, l, v, s]) => (
-                    <div key={l} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: "1px solid var(--line)" }}>
-                      <span aria-hidden style={{ width: 36, height: 36, borderRadius: 11, background: "var(--bg)", display: "grid", placeItems: "center", flex: "none" }}><Icon size={19} weight="duotone" className="duo-icon neu" /></span>
-                      <span className="meta" style={{ flex: 1, fontSize: 14 }}>{l}</span>
-                      <span style={{ textAlign: "right", minWidth: 0 }}>
-                        <span className="num" style={{ display: "block", fontSize: 15, fontWeight: 600, letterSpacing: 0 }}>{v}</span>
-                        {s && <span className="cap num" style={{ letterSpacing: 0 }}>{s}</span>}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* optional motto: it sits on the card below and on the home screen */}
+                <h1 className="title">Your personal motto</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>What words keep you moving when motivation fades? It sits on your home screen.</p>
+                {/* write your own, or pick one of the five */}
                 <div className="field" style={{ marginTop: 24 }}>
-                  <label htmlFor="motto">Your motto <span className="cap">(optional)</span></label>
-                  <input data-cuelume-type id="motto" className="input" value={motto} maxLength={60} onChange={(e) => setMotto(e.target.value)} placeholder="What keeps you going?" />
+                  <label htmlFor="motto">In your own words</label>
+                  <input id="motto" className="input" value={motto} maxLength={60} onChange={(e) => setMotto(e.target.value)} placeholder="Type your motto" />
                   <span className="help num" style={{ textAlign: "right", letterSpacing: 0 }}>{motto.length}/60</span>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                  {mottos.map((x) => (
-                    <button data-cuelume-toggle key={x} type="button" className="chip" aria-pressed={motto === x} onClick={() => setMotto(motto === x ? "" : x)} style={{ textAlign: "left", height: "auto", minHeight: 36, padding: "8px 14px", whiteSpace: "normal" }}>{x}</button>
-                  ))}
+                <p style={{ fontSize: 15, fontWeight: 600, marginTop: 14 }} id="motto-pick">Or choose one</p>
+                <div role="radiogroup" aria-labelledby="motto-pick" style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                  {mottos.map((x) => {
+                    const on = motto === x;
+                    return (
+                      <button key={x} type="button" role="radio" aria-checked={on} className="card" onClick={() => setMotto(on ? "" : x)}
+                        style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: "14px 16px", borderRadius: 18,
+                          borderColor: on ? "var(--blue)" : "var(--line)", background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 15, lineHeight: 1.4, color: on ? "var(--blue)" : "var(--ink)", fontWeight: on ? 560 : 450 }}>{x}</span>
+                        <span aria-hidden style={{ width: 22, height: 22, borderRadius: "50%", flex: "none", display: "grid", placeItems: "center",
+                          border: on ? "none" : "1.5px solid var(--line-2, #C9D1DE)", background: on ? "var(--blue)" : "transparent", transition: "all .2s" }}>
+                          {on && <Check size={13} weight="bold" color="#fff" />}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-
               </>
             )}
 
             {step === 5 && (
               <>
-                <h1 className="title">Your goal card</h1>
-                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Share it to stay accountable.</p>
+                <h1 className="title">A card for your goal</h1>
+                <p className="meta" style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5 }}>Our gift for starting. Share it, and let your people cheer you to the finish.</p>
                 {/* 9:16 so it drops straight into an Instagram story */}
-                <motion.div ref={cardRef} initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
-                  style={{ margin: "14px auto 0", width: "min(100%, 300px)", aspectRatio: "9 / 16", borderRadius: 28, padding: "20px 20px 22px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
-                    display: "flex", flexDirection: "column", background: "#061026", boxShadow: "0 28px 50px -24px rgba(3,11,36,0.75)" }}>
+                {/* shown inside a phone, the way it will look as a story; only the inner card (cardRef) is exported */}
+                <motion.div initial={{ opacity: 0, y: 24, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
+                  style={{ margin: "18px auto 0", width: "min(100%, 284px)", padding: 7, borderRadius: 44, position: "relative",
+                    background: "linear-gradient(145deg, #2A3242 0%, #0B1220 45%, #1C2433 100%)",
+                    boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,0.14), 0 30px 60px -28px rgba(3,11,36,0.8), 0 10px 22px -14px rgba(3,11,36,0.5)" }}>
+                  {/* side buttons */}
+                  <span aria-hidden style={{ position: "absolute", left: -2.5, top: 92, width: 3, height: 26, borderRadius: 2, background: "#1C2433" }} />
+                  <span aria-hidden style={{ position: "absolute", left: -2.5, top: 128, width: 3, height: 44, borderRadius: 2, background: "#1C2433" }} />
+                  <span aria-hidden style={{ position: "absolute", right: -2.5, top: 112, width: 3, height: 60, borderRadius: 2, background: "#1C2433" }} />
+                  {/* dynamic island */}
+                  <span aria-hidden style={{ position: "absolute", top: 15, left: "50%", transform: "translateX(-50%)", width: 74, height: 21, borderRadius: 999, background: "#000", zIndex: 2 }} />
+                <div ref={cardRef}
+                  style={{ width: "100%", aspectRatio: "9 / 16", borderRadius: 37, padding: "40px 18px 20px", color: "#fff", position: "relative", overflow: "hidden", isolation: "isolate",
+                    display: "flex", flexDirection: "column", background: "#061026" }}>
                   {/* vintage, moody grade: faded film colour, navy wash, heavy vignette, grain */}
                   <img src={photo ?? goalPhoto(activity).src} alt="" aria-hidden
                     style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: photo ? "50% 50%" : goalPhoto(activity).pos, zIndex: -1,
                       filter: "saturate(0.9) sepia(0.14) contrast(1.08) brightness(0.8)" }} />
                   <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1, background: "#0A1E5C", mixBlendMode: "multiply", opacity: 0.22 }} />
                   <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: -1,
-                    background: "linear-gradient(180deg, rgba(4,8,20,0.7) 0%, rgba(4,8,20,0.2) 30%, rgba(4,8,20,0.35) 62%, rgba(4,8,20,0.9) 100%), radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(2,4,12,0.65) 100%)" }} />
+                    background: "linear-gradient(180deg, rgba(4,8,20,0.7) 0%, rgba(4,8,20,0.2) 30%, rgba(4,8,20,0.4) 60%, rgba(4,8,20,0.94) 100%), radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(2,4,12,0.65) 100%)" }} />
                   <div aria-hidden className="grain" style={{ opacity: 0.35, zIndex: -1 }} />
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.16)", display: "grid", placeItems: "center", flex: "none" }}><M.Icon size={16} weight="fill" /></span>
-                      <span style={{ fontSize: 13, fontWeight: 560 }}>My {actLower} goal</span>
+                      <span style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(255,255,255,0.16)", display: "grid", placeItems: "center", flex: "none" }}><M.Icon size={14} weight="fill" /></span>
+                      <span style={{ fontSize: 11.5, fontWeight: 560, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>My {actLower} goal</span>
                     </span>
-                    <Wordmark width={56} color="rgba(255,255,255,0.85)" />
+                    <span style={{ flex: "none", display: "flex" }}><Wordmark width={78} color="rgba(255,255,255,0.92)" /></span>
                   </div>
-                  <p style={{ fontWeight: 700, fontSize: parts.value.length > 7 ? 40 : 52, lineHeight: 1, letterSpacing: "-0.04em", marginTop: 18 }}>
-                    <span className="num">{parts.value}</span> <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap", ...(parts.unit.length > 8 && { display: "block", marginTop: 8 }) }}>{parts.unit}</span>
+                  {/* 1. the target, the one thing to read first */}
+                  <p style={{ fontWeight: 700, fontSize: parts.value.length > 9 ? 24 : parts.value.length > 6 ? 28 : 36, lineHeight: 0.95, letterSpacing: "-0.045em", marginTop: 22, overflowWrap: "anywhere" }}>
+                    <span className="num" style={{ whiteSpace: "nowrap" }}>{parts.value}</span> <span style={{ fontSize: parts.unit.length > 8 ? 15 : 17, fontWeight: 600, letterSpacing: "-0.01em", opacity: 0.9, lineHeight: 1.25,
+                      ...(parts.unit.length > 8 ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginTop: 6 } : { whiteSpace: "nowrap" }) }}>{parts.unit}</span>
                   </p>
-                  <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.8)", lineHeight: 1.35 }}>{sentence} by {fmtDate(due)}</p>
-                  {/* the motto as a pull quote: a large hanging opening mark, Instrument Serif italic, a soft closing mark */}
-                  {motto.trim() && (
-                    <blockquote style={{ position: "relative", margin: "20px 0 0", padding: "4px 0 0 22px" }}>
-                      <span aria-hidden style={{ position: "absolute", left: -2, top: -8, fontFamily: "var(--serif)", fontSize: 58, lineHeight: 1, color: "rgba(255,255,255,0.9)" }}>“</span>
-                      <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontWeight: 400, fontSize: 22, lineHeight: 1.15, letterSpacing: "-0.005em", color: "#fff", textWrap: "balance" }}>
-                        {motto.trim().replace(/^["“”]+|["“”]+$/g, "")}<span aria-hidden style={{ display: "inline-block", fontSize: 34, lineHeight: 0, color: "rgba(255,255,255,0.9)", marginLeft: 3, transform: "translateY(0.32em)" }}>”</span>
-                      </p>
-                    </blockquote>
-                  )}
-                  <div style={{ flex: 1, minHeight: 0, margin: "14px 4px 8px" }}>
+                  {/* 2. when: the number already says what, so this line only adds the date and the countdown */}
+                  <p className="num" style={{ marginTop: 5, fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.72)", letterSpacing: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2px 8px" }}>
+                    <span>By {fmtDate(due)}</span>
+                    <span aria-hidden style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,0.5)" }} />
+                    <span>{days} {days === 1 ? "day" : "days"}</span>
+                  </p>
+                  {/* 3. the plan, quiet, in the middle */}
+                  <div style={{ flex: "1 1 0", minHeight: 96, margin: "26px -4px 34px" }}>
                     <GoalRoute days={days} vals={routeVals} started={false} Icon={act.Icon} />
                   </div>
-                  {/* signed like a pledge, in a handwritten script */}
-                  {first && (
-                    <p style={{ textAlign: "right", fontSize: 13, color: "rgba(255,255,255,0.72)" }}>
-                      by <span style={{ fontFamily: "var(--signature)", fontSize: 17, fontWeight: 500, lineHeight: 1, letterSpacing: "-0.01em", color: "#fff", marginLeft: 6 }}>{first}</span>
-                    </p>
+                  {/* 4. the motto closes the card, set apart by a hairline */}
+                  {motto.trim() && (
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.18)", paddingTop: 12, flex: "none" }}>
+                      {motto.trim() && (
+                        <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontWeight: 400, fontSize: 14, lineHeight: 1.25, color: "#fff", textWrap: "balance", paddingBottom: 2, overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          “{motto.trim().replace(/^["“”]+|["“”]+$/g, "")}”
+                        </p>
+                      )}
+                    </div>
                   )}
+                </div>
                 </motion.div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 52px", gap: 8, marginTop: 14 }}>
-                  <label className="btn btn-soft" style={{ position: "relative", gap: 8, fontWeight: 560, cursor: "pointer", padding: "0 12px", fontSize: 15, minWidth: 0 }}>
-                    <ImageSquare size={18} weight="bold" />{photo ? "Change photo" : "Add photo"}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 48px", gap: 6, marginTop: 14 }}>
+                  <label className="btn btn-soft" style={{ position: "relative", gap: 6, fontWeight: 560, cursor: "pointer", padding: "0 8px", fontSize: 14.5, minWidth: 0 }}>
+                    <ImageSquare size={18} weight="bold" style={{ flex: "none" }} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{photo ? "Change photo" : "Add photo"}</span>
                     <input type="file" accept="image/*" aria-label="Upload your own photo for the goal card" onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ""; }}
                       style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
                   </label>
-                  <button data-cuelume-tap type="button" className="btn btn-soft" onClick={share} disabled={sharing === "busy"} aria-busy={sharing === "busy"} style={{ gap: 8, fontWeight: 560, padding: "0 12px", fontSize: 15, minWidth: 0 }} aria-live="polite">
+                  <button type="button" className="btn btn-soft" onClick={share} disabled={sharing === "busy"} aria-busy={sharing === "busy"} style={{ gap: 6, fontWeight: 560, padding: "0 8px", fontSize: 14.5, minWidth: 0 }} aria-live="polite">
                     {sharing === "busy" ? <span className="spinner" aria-hidden /> : <ShareFat size={18} weight="bold" />}
                     {sharing === "busy" ? "Preparing" : sharing === "saved" ? "Saved" : "Share"}
                   </button>
-                  <button data-cuelume-tap type="button" className="btn btn-soft" onClick={download} disabled={saving === "busy"} aria-busy={saving === "busy"}
-                    aria-label={saving === "saved" ? "Goal card downloaded" : "Download goal card"} title="Download image" style={{ padding: 0, width: 52 }}>
+                  <button type="button" className="btn btn-soft" onClick={download} disabled={saving === "busy"} aria-busy={saving === "busy"}
+                    aria-label={saving === "saved" ? "Goal card downloaded" : "Download goal card"} title="Download image" style={{ padding: 0, width: 48 }}>
                     {saving === "busy" ? <span className="spinner" aria-hidden /> : saving === "saved" ? <Check size={18} weight="bold" color="#067647" /> : <DownloadSimple size={19} weight="bold" />}
                   </button>
                 </div>
@@ -1423,10 +1411,11 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
 
       <div style={{ flex: "none", padding: "14px 20px 34px", background: "#fff", borderTop: "1px solid var(--line)", display: "grid", gap: 8 }}>
         {step === 2 && tried && Object.keys(problems).length > 0 && <p className="err" role="alert" style={{ textAlign: "center" }}>Fix the highlighted field{Object.keys(problems).length > 1 ? "s" : ""} to continue.</p>}
-        {/* review: Edit on the left, Create on the right, in one row */}
+        {/* motto: Skip on the left (it is optional); goal card: Edit on the left, Create on the right */}
         <div style={{ display: "grid", gridTemplateColumns: step >= 4 ? "1fr 1.6fr" : "1fr", gap: 10 }}>
-          {step >= 4 && <button data-cuelume-navigate type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
-          <button data-cuelume-tap className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 5 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
+          {step === 4 && <button type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => { setMotto(""); move(1); }}>Skip</button>}
+          {step === 5 && <button type="button" className="btn btn-soft" style={{ width: "100%" }} onClick={() => jump(2)}>Edit goal</button>}
+          <button className="btn btn-blue" style={{ width: "100%", gap: 8 }} onClick={() => move(1)}>{cta}{step === 5 ? <Check size={18} weight="bold" aria-hidden /> : <ArrowRight size={18} weight="bold" aria-hidden />}</button>
         </div>
       </div>
 

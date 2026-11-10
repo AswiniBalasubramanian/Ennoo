@@ -51,7 +51,7 @@ export function TabBar({ route, go }: { route: Route; go: (r: Route) => void }) 
   const Tab = ({ id, label, Icon }: (typeof tabs)[number]) => {
     const on = route === id;
     return (
-      <button data-cuelume-navigate className="tab" aria-current={on ? "page" : undefined} onClick={() => go(id)}>
+      <button className="tab" aria-current={on ? "page" : undefined} onClick={() => go(id)}>
         <Icon size={24} weight={on ? "fill" : "regular"} />
         {label}
       </button>
@@ -61,7 +61,7 @@ export function TabBar({ route, go }: { route: Route; go: (r: Route) => void }) 
     <nav className="tabbar" aria-label="Main">
       {tabs.slice(0, 2).map((t) => <Tab key={t.id} {...t} />)}
       <div style={{ display: "grid", placeItems: "center" }}>
-        <button data-cuelume-open className="record-fab" aria-label="Record an activity" onClick={() => go("record")}>
+        <button className="record-fab" aria-label="Record an activity" onClick={() => go("record")}>
           <Plus size={26} weight="bold" />
         </button>
       </div>
@@ -146,7 +146,7 @@ export function AuthHeader({ onBack }: { onBack: () => void }) {
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 45%", filter: "saturate(1.1)" }} />
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,11,36,0.45) 0%, rgba(3,11,36,0.25) 30%, rgba(0,40,140,0.7) 62%, rgba(0,40,140,0.45) 74%, rgba(255,255,255,0.85) 90%, #fff 97%)", bottom: -2 }} />
       <div className="pad top" style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <button data-cuelume-navigate className="icon-btn on-blue" aria-label="Back" onClick={onBack}><ArrowLeft size={20} /></button>
+        <button className="icon-btn on-blue" aria-label="Back" onClick={onBack}><ArrowLeft size={20} /></button>
         <Wordmark width={84} color="#fff" />
         <span style={{ width: 44 }} aria-hidden />
       </div>

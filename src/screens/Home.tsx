@@ -67,7 +67,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         background: "radial-gradient(120% 60% at 85% 18%, rgba(47,212,236,0.35), transparent 60%), linear-gradient(180deg, #0040D0 0%, #0054FB 42%, #3D8BFF 80%, var(--bg) 100%)" }}>
         <header className="pad top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Wordmark width={98} color="#fff" />
-          <button data-cuelume-tap className="icon-btn on-blue" aria-label={fresh ? "Notifications" : "Notifications, 2 unread"} style={{ position: "relative" }}>
+          <button className="icon-btn on-blue" aria-label={fresh ? "Notifications" : "Notifications, 2 unread"} style={{ position: "relative" }}>
             <Bell size={20} />
             {!fresh && <span style={{ position: "absolute", top: 10, right: 11, width: 8, height: 8, borderRadius: "50%", background: "#2FD4EC", border: "2px solid #0054FB" }} />}
           </button>
@@ -77,7 +77,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)" }}>{fresh ? `Welcome, ${profile.name || athlete.first}` : `Morning, ${athlete.first}`}</p>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
             <h1 className="title" style={{ fontSize: 22, color: "#fff" }}>{g.title}</h1>
-            <button data-cuelume-tap className="icon-btn on-blue" aria-label="Edit goal" style={{ width: 38, height: 38 }}><PencilSimple size={17} /></button>
+            <button className="icon-btn on-blue" aria-label="Edit goal" style={{ width: 38, height: 38 }}><PencilSimple size={17} /></button>
           </div>
           <p className="num" style={{ fontSize: 64, fontWeight: 600, lineHeight: 1, marginTop: 18 }}>
             {hero.big}<span style={{ fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.7)", letterSpacing: 0 }}>{hero.of}</span>
@@ -103,8 +103,8 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
               style={{ position: "relative", padding: "16px 16px 16px 18px", marginBottom: 8, overflow: "hidden" }}>
               <p style={{ fontSize: 15, fontWeight: 600, paddingRight: 36 }}>Pace every week to {pg ? goalText(pg) : `${fmt(g.target)} ${g.unit}`}</p>
               <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45, paddingRight: 8 }}>Pro adds deadline projections, all-time bests and every sport. Free for 15 days.</p>
-              <button data-cuelume-tap className="btn btn-blue" onClick={() => go("pro")} style={{ height: 44, marginTop: 12, padding: "0 18px", fontSize: 15 }}>See Pro plans</button>
-              <button data-cuelume-close className="icon-btn" aria-label="Dismiss Pro offer" onClick={() => setProOffer(false)}
+              <button className="btn btn-blue" onClick={() => go("pro")} style={{ height: 44, marginTop: 12, padding: "0 18px", fontSize: 15 }}>See Pro plans</button>
+              <button className="icon-btn" aria-label="Dismiss Pro offer" onClick={() => setProOffer(false)}
                 style={{ position: "absolute", top: 6, right: 6, border: 0, background: "transparent", color: "var(--gray)" }}><X size={18} /></button>
             </motion.div>
           )}
@@ -129,7 +129,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
               </div>
             );
           })}
-          <button data-cuelume-tap className="card" style={{ flex: "none", width: fresh ? "100%" : 140, padding: 16, display: "grid", placeItems: "center", alignContent: "center", gap: 8, borderStyle: "dashed", color: "var(--blue)" }}>
+          <button className="card" style={{ flex: "none", width: fresh ? "100%" : 140, padding: 16, display: "grid", placeItems: "center", alignContent: "center", gap: 8, borderStyle: "dashed", color: "var(--blue)" }}>
             <Plus size={22} />
             <span style={{ fontSize: 14, fontWeight: 560 }}>{fresh ? "Add a second goal" : "New goal"}</span>
             {fresh && <span className="cap">Track another sport alongside {activity.name.toLowerCase()}</span>}
@@ -137,12 +137,12 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         </div>
 
         {/* This week */}
-        <div className="sec"><h2 className="h2">This week</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link">Calendar</button></div>
+        <div className="sec"><h2 className="h2">This week</h2><button className="link">Calendar</button></div>
         <div className="card" style={{ padding: "12px 8px", display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {week.map((w) => {
             const done = !fresh && w.done;
             return (
-              <button data-cuelume-tap key={w.n} aria-label={`${w.d} ${w.n}${done ? ", activity logged" : w.planned ? ", session planned" : ""}`}
+              <button key={w.n} aria-label={`${w.d} ${w.n}${done ? ", activity logged" : w.planned ? ", session planned" : ""}`}
                 style={{ display: "grid", justifyItems: "center", gap: 4, padding: "8px 0", borderRadius: 14, background: w.today ? "var(--blue)" : "transparent", color: w.today ? "#fff" : "var(--ink)" }}>
                 <span style={{ fontSize: 11, color: w.today ? "rgba(255,255,255,0.75)" : "var(--gray)" }}>{w.d}</span>
                 <span className="num" style={{ fontSize: 17, fontWeight: 600, letterSpacing: 0 }}>{w.n}</span>
@@ -153,7 +153,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         </div>
 
         {/* Today's plan */}
-        <div className="sec"><h2 className="h2">Today's plan</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link"><Plus size={14} weight="bold" />Schedule</button></div>
+        <div className="sec"><h2 className="h2">Today's plan</h2><button className="link"><Plus size={14} weight="bold" />Schedule</button></div>
         <div className="card" style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
           <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={activity.Icon} size={23} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -161,12 +161,12 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
             <p className="cap" style={{ marginTop: 2 }}>{fresh ? "Start whenever you're ready" : "Next: easy 6 km run, Thursday"}</p>
           </div>
           {fresh
-            ? <button data-cuelume-tap className="btn btn-blue" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("record")}>Start</button>
-            : <button data-cuelume-tap className="btn btn-soft" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("summary")}>View</button>}
+            ? <button className="btn btn-blue" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("record")}>Start</button>
+            : <button className="btn btn-soft" style={{ height: 42, padding: "0 18px", fontSize: 15 }} onClick={() => go("summary")}>View</button>}
         </div>
 
         {/* Recent activity */}
-        <div className="sec"><h2 className="h2">Recent activity</h2>{!fresh && <button data-cuelume-tap data-cuelume-emphasis="subtle" className="link" onClick={() => go("timeline")}>See all</button>}</div>
+        <div className="sec"><h2 className="h2">Recent activity</h2>{!fresh && <button className="link" onClick={() => go("timeline")}>See all</button>}</div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>Nothing yet. Every activity you record lands here, with its route, stats and your notes.</p>
         ) : (
@@ -174,7 +174,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
             {entries.slice(0, 3).map((e, i) => {
               const A = byId(e.activity);
               return (
-                <button data-cuelume-tap key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+                <button key={e.id} onClick={() => go("summary")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
                   <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><SportIcon Icon={A.Icon} size={21} /></span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontSize: 15, fontWeight: 560 }}>{e.title}</span>
@@ -188,7 +188,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         )}
 
         {/* Top locations */}
-        <div className="sec"><h2 className="h2">Top locations</h2>{!fresh && <button data-cuelume-tap data-cuelume-emphasis="subtle" className="link">View all</button>}</div>
+        <div className="sec"><h2 className="h2">Top locations</h2>{!fresh && <button className="link">View all</button>}</div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>The places you return to most will show up here after a few activities.</p>
         ) : (
@@ -207,7 +207,7 @@ export default function Home({ go, profile }: { go: (r: Route) => void; profile:
         )}
 
         {/* Personal bests */}
-        <div className="sec"><h2 className="h2">Personal bests</h2><button data-cuelume-tap data-cuelume-emphasis="subtle" className="link"><Plus size={14} weight="bold" />Add</button></div>
+        <div className="sec"><h2 className="h2">Personal bests</h2><button className="link"><Plus size={14} weight="bold" />Add</button></div>
         {fresh ? (
           <p className="card meta" style={{ padding: 18, lineHeight: 1.5 }}>Add up to four times, distances or lifts you're proud of. We'll flag it when you beat one.</p>
         ) : (

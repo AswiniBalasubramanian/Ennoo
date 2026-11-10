@@ -73,14 +73,14 @@ export default function Pro({ go }: { go: (r: Route) => void }) {
     <div className="body" style={{ background: "var(--white)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <StatusBar />
       <header className="pad top" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", flex: "none" }}>
-        <button data-cuelume-navigate className="icon-btn" aria-label="Back" onClick={() => go("home")}><ArrowLeft size={20} /></button>
+        <button className="icon-btn" aria-label="Back" onClick={() => go("home")}><ArrowLeft size={20} /></button>
         {/* the full wordmark sits below, so the badge only names the tier, in the same black and silver */}
         <span style={{ display: "inline-flex", alignItems: "center", height: 28, padding: "0 14px", borderRadius: 999,
           background: "linear-gradient(180deg, #3A3F48 0%, #14161B 55%, #0A0B0E 100%)", boxShadow: "inset 0 1px 0 rgba(242,244,247,0.35), 0 2px 6px -2px rgba(11,13,18,0.4)",
           color: "#E9ECF1", fontSize: 13, fontWeight: 650, letterSpacing: "0.02em" }}>
           Pro
         </span>
-        <button data-cuelume-tap onClick={() => go("home")} style={{ justifySelf: "end", fontSize: 14, fontWeight: 560, color: "var(--gray)", padding: "10px 4px", whiteSpace: "nowrap" }}>Skip for now</button>
+        <button onClick={() => go("home")} style={{ justifySelf: "end", fontSize: 14, fontWeight: 560, color: "var(--gray)", padding: "10px 4px", whiteSpace: "nowrap" }}>Skip for now</button>
       </header>
 
       <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
@@ -96,7 +96,7 @@ export default function Pro({ go }: { go: (r: Route) => void }) {
             {plans.map((x) => {
               const on = x.id === plan;
               return (
-                <button data-cuelume-select key={x.id} role="radio" aria-checked={on} onClick={() => setPlan(x.id)}
+                <button key={x.id} role="radio" aria-checked={on} onClick={() => setPlan(x.id)}
                   style={{ textAlign: "left", padding: 16, borderRadius: 20, border: `1.5px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "var(--blue-50)" : "#fff", transition: "all .2s" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 17, fontWeight: 600, color: on ? "var(--blue)" : "var(--ink)" }}>{x.name}</span>
@@ -148,9 +148,9 @@ export default function Pro({ go }: { go: (r: Route) => void }) {
       </div>
 
       <div style={{ flex: "none", padding: "12px 20px 26px", background: "#fff", borderTop: "1px solid var(--line)" }}>
-        <button data-cuelume-tap data-cuelume-emphasis="strong" className="btn btn-blue" style={{ width: "100%" }} onClick={() => go("home")}>Start {p.trial}-day free trial</button>
+        <button className="btn btn-blue" style={{ width: "100%" }} onClick={() => go("home")}>Start {p.trial}-day free trial</button>
         <div style={{ display: "flex", justifyContent: "center", gap: 22, marginTop: 10 }}>
-          {["Restore purchase", "Terms", "Privacy"].map((l) => <button data-cuelume-tap data-cuelume-emphasis="subtle" key={l} className="cap" style={{ fontSize: 13, padding: 4 }}>{l}</button>)}
+          {["Restore purchase", "Terms", "Privacy"].map((l) => <button key={l} className="cap" style={{ fontSize: 13, padding: 4 }}>{l}</button>)}
         </div>
       </div>
     </div>

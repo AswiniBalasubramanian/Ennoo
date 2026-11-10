@@ -77,8 +77,8 @@ export default function Welcome({ go }: { go: (r: Route) => void }) {
           Track, understand and keep everything you do, in one place.
         </motion.p>
         <motion.div {...rise(reduce ? 0 : 1.9)} style={{ display: "grid", gap: 6, marginTop: 28 }}>
-          <button data-cuelume-tap className="btn btn-blue" onClick={() => go("signup")}>Get started</button>
-          <button data-cuelume-tap className="btn" style={{ color: "rgba(255,255,255,0.86)", fontWeight: 500 }} onClick={() => go("login")}>I'm already a member</button>
+          <button className="btn btn-blue" onClick={() => go("signup")}>Get started</button>
+          <button className="btn" style={{ color: "rgba(255,255,255,0.86)", fontWeight: 500 }} onClick={() => go("login")}>I'm already a member</button>
         </motion.div>
       </div>
     </div>

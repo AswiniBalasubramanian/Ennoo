@@ -34,7 +34,7 @@ export function Sheet({ id, title, sub, onClose, children }: { id: string; title
             <h2 id={`${id}-title`} className="h2" style={{ fontSize: 20 }}>{title}</h2>
             {sub && <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45 }}>{sub}</p>}
           </div>
-          <button data-cuelume-close type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ border: 0, marginRight: -10, marginTop: -6, flex: "none" }}><X size={20} weight="bold" /></button>
+          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ border: 0, marginRight: -10, marginTop: -6, flex: "none" }}><X size={20} weight="bold" /></button>
         </div>
         {children}
       </motion.div>

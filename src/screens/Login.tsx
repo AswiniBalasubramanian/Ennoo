@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { play } from "cuelume";
 import { Eye, EyeSlash } from "@phosphor-icons/react";
 import { StatusBar, GoogleG, AuthHeader, type Route } from "../components";
 
@@ -20,7 +19,7 @@ export default function Login({ go }: { go: (r: Route) => void }) {
     if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter the email you signed up with.";
     if (!password) next.password = "Enter your password.";
     setErrors(next);
-    if (Object.keys(next).length) return void play("error", { emphasis: "subtle" });
+    if (Object.keys(next).length) return;
     setBusy(true);
     setTimeout(() => go("home"), 700);
   };
@@ -34,7 +33,7 @@ export default function Login({ go }: { go: (r: Route) => void }) {
         <h1 className="title serif-title">Welcome back</h1>
         <p className="meta" style={{ fontSize: 15, marginTop: 8 }}>Pick up right where you left off.</p>
 
-        <button data-cuelume-tap type="button" className="btn btn-soft" style={{ width: "100%", marginTop: 20 }} onClick={() => go("home")}>
+        <button type="button" className="btn btn-soft" style={{ width: "100%", marginTop: 20 }} onClick={() => go("home")}>
           <GoogleG size={20} /> Continue with Google
         </button>
 
@@ -45,7 +44,7 @@ export default function Login({ go }: { go: (r: Route) => void }) {
         <div style={{ display: "grid", gap: 14 }}>
           <div className="field">
             <label htmlFor="li-email">Email</label>
-            <input data-cuelume-type id="li-email" className="input" type="email" inputMode="email" autoComplete="email" value={email}
+            <input id="li-email" className="input" type="email" inputMode="email" autoComplete="email" value={email}
               onChange={(e) => { setEmail(e.target.value); setResetSent(false); }} placeholder="you@example.com"
               aria-invalid={!!errors.email} aria-describedby={errors.email ? "li-email-err" : undefined} />
             {errors.email && <span id="li-email-err" className="err" role="alert">{errors.email}</span>}
@@ -53,16 +52,16 @@ export default function Login({ go }: { go: (r: Route) => void }) {
           <div className="field">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <label htmlFor="li-pw">Password</label>
-              <button data-cuelume-tap data-cuelume-emphasis="subtle" type="button" className="link" style={{ fontSize: 13 }}
+              <button type="button" className="link" style={{ fontSize: 13 }}
                 onClick={() => { if (/^\S+@\S+\.\S+$/.test(email)) { setResetSent(true); setErrors({}); } else setErrors({ email: "Enter your email first, then we'll send a reset link." }); }}>
                 Forgot password?
               </button>
             </div>
             <div style={{ position: "relative" }}>
-              <input data-cuelume-type id="li-pw" className="input" type={show ? "text" : "password"} autoComplete="current-password" value={password}
+              <input id="li-pw" className="input" type={show ? "text" : "password"} autoComplete="current-password" value={password}
                 onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password}
                 aria-describedby={errors.password ? "li-pw-err" : undefined} style={{ paddingRight: 52 }} />
-              <button data-cuelume-toggle type="button" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}
+              <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}
                 style={{ position: "absolute", right: 4, top: 4, width: 42, height: 42, display: "grid", placeItems: "center", color: "var(--gray)" }}>
                 {show ? <EyeSlash size={20} /> : <Eye size={20} />}
               </button>
@@ -72,12 +71,12 @@ export default function Login({ go }: { go: (r: Route) => void }) {
           </div>
         </div>
 
-        <motion.button data-cuelume-tap type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 22 }} whileTap={{ scale: 0.98 }} disabled={busy} aria-busy={busy}>
+        <motion.button type="submit" className="btn btn-blue" style={{ width: "100%", marginTop: 22 }} whileTap={{ scale: 0.98 }} disabled={busy} aria-busy={busy}>
           {busy ? <><span className="spinner" aria-hidden />Logging in</> : "Log in"}
         </motion.button>
 
         <p className="meta" style={{ textAlign: "center", marginTop: 16 }}>
-          New to Ennoo? <button data-cuelume-tap data-cuelume-emphasis="subtle" type="button" className="link" onClick={() => go("signup")}>Create an account</button>
+          New to Ennoo? <button type="button" className="link" onClick={() => go("signup")}>Create an account</button>
         </p>
       </form>
     </div>
