@@ -681,7 +681,8 @@ const TIME_COLS = {
 };
 /* preset times around the starting value: a little faster and slower, rounded to whole minutes (or half seconds for sprints) */
 function timePresets(fmt: "hms" | "sec", base: number) {
-  const snap = (t: number) => (fmt === "hms" ? Math.max(60, Math.round(t / 60) * 60) : Math.max(0.5, Math.round(t * 2) / 2));
+  // short times snap to 5 s so a 60 s start still gets distinct presets
+  const snap = (t: number) => (fmt === "hms" ? (base < 600 ? Math.max(5, Math.round(t / 5) * 5) : Math.max(60, Math.round(t / 60) * 60)) : Math.max(0.5, Math.round(t * 2) / 2));
   return [...new Set([0.85, 0.9, 1, 1.1, 1.2].map((f) => snap(base * f)))];
 }
 function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void }) {
@@ -1036,6 +1037,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const [pickingDate, setPickingDate] = useState(false);
   const [pickingDist, setPickingDist] = useState(false);
   const [pickingDone, setPickingDone] = useState(false);
+  // the target time wheel starts at 60 s until they save a time of their own
+  const [timeSet, setTimeSet] = useState(false);
   // which goal number has its sheet open
   const [picking, setPicking] = useState<null | "dur" | "dur-done" | "count" | "count-done" | "ref" | "pdist" | "ptime" | "pbest" | "wt" | "wt-now">(null);
   // their own photo for the story card; kept as an object URL, released when replaced or on unmount
@@ -1439,8 +1442,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
         {picking === "pdist" && <DistanceSheet title="Distance" cta="Set distance" value={goal.perfDist ?? 5} unit={goal.perfUnit ?? "km"}
           onSave={(v, u) => setPerfDist(v, u as DistUnit)} onClose={() => setPicking(null)} />}
         {(picking === "ptime" || picking === "pbest") && <TimeSheet title={picking === "ptime" ? "Target time" : "Current best"} cta={picking === "ptime" ? "Set time" : "Save best"}
-          fmt={goal.timeFmt ?? "hms"} value={picking === "ptime" ? goal.target : (goal.best ?? 0) > 0 ? goal.best ?? 0 : goal.target}
-          onSave={(sec) => set(picking === "ptime" ? { target: sec } : { best: sec })} onClose={() => setPicking(null)} />}
+          fmt={goal.timeFmt ?? "hms"} value={picking === "ptime" ? (timeSet ? goal.target : 60) : (goal.best ?? 0) > 0 ? goal.best ?? 0 : goal.target}
+          onSave={(sec) => { if (picking === "ptime") setTimeSet(true); set(picking === "ptime" ? { target: sec } : { best: sec }); }} onClose={() => setPicking(null)} />}
         {(picking === "wt" || picking === "wt-now") && <NumberSheet title={picking === "wt" ? "Target weight" : "Current weight"} cta={picking === "wt" ? "Set weight" : "Save weight"}
           value={picking === "wt" ? goal.target : goal.current} unit={goal.unit} units={[{ name: "kg", f: 1 }, { name: "lb", f: 0.45359237 }]} min={goal.unit === "lb" ? 44 : 20} max={goal.unit === "lb" ? 880 : 400} tenths presets={goal.unit === "lb" ? [130, 150, 170, 190] : [55, 60, 65, 70, 75]}
           onSave={(v, u) => {
