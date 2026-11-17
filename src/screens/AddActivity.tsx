@@ -244,14 +244,26 @@ function ClockSheet({ value, now, onSave, onClose }: { value: Date; now: Date; o
 
 /* ---------- Small pickers for the optional rows ---------- */
 type Opt = { label: string; Icon?: typeof Star };
-function AddOwn({ placeholder, onAdd }: { placeholder: string; onAdd: (v: string) => void }) {
+/* the last chip in a row: "+ Add", which turns into a small text box in place */
+function AddChip({ label, placeholder, onAdd }: { label: string; placeholder: string; onAdd: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
   const [v, setV] = useState("");
-  const add = () => { if (v.trim()) { onAdd(v.trim()); setV(""); } };
+  const add = () => { if (v.trim()) onAdd(v.trim()); setV(""); setOpen(false); };
+  if (!open) return (
+    <button type="button" className="chip" onClick={() => setOpen(true)} style={{ color: "var(--blue)", borderStyle: "dashed", borderColor: "#8DB4FF", fontWeight: 560 }}>
+      <Plus size={14} weight="bold" aria-hidden />{label}
+    </button>
+  );
   return (
-    <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-      <input className="input" value={v} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} placeholder={placeholder} aria-label={placeholder} style={{ flex: 1 }} />
-      <button type="button" className="btn btn-soft" disabled={!v.trim()} onClick={add} style={{ padding: "0 18px" }}>Add</button>
-    </div>
+    <span className="chip" style={{ padding: "0 4px 0 14px", borderColor: "var(--blue)", color: "var(--ink)" }}>
+      <input autoFocus value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} aria-label={placeholder} maxLength={40}
+        onKeyDown={(e) => { if (e.key === "Enter") add(); if (e.key === "Escape") { setV(""); setOpen(false); } }} onBlur={() => { if (!v.trim()) setOpen(false); }}
+        style={{ width: Math.max(96, v.length * 8 + 16), maxWidth: 200, border: 0, outline: "none", padding: 0, fontSize: 14, background: "transparent", color: "var(--ink)" }} />
+      <button type="button" aria-label="Add" disabled={!v.trim()} onMouseDown={(e) => e.preventDefault()} onClick={add}
+        style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: v.trim() ? "var(--blue)" : "var(--line)", color: "#fff", flex: "none" }}>
+        <Check size={14} weight="bold" />
+      </button>
+    </span>
   );
 }
 
@@ -459,7 +471,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
   const numKey = typeof sheet === "string" && sheet.startsWith("num:") ? sheet.slice(4) : null;
 
   const head = (t: string, opt?: boolean) => <h2 className="h2" style={{ fontSize: 18, margin: "28px 0 12px" }}>{t}{opt && <span className="meta" style={{ fontSize: 14, fontWeight: 500, marginLeft: 6 }}>Optional</span>}</h2>;
-  const chips = (label: string, opts: Opt[], isOn: (o: string) => boolean, toggle: (o: string) => void) => (
+  const chips = (label: string, opts: Opt[], isOn: (o: string) => boolean, toggle: (o: string) => void, extra?: React.ReactNode) => (
     <div role="group" aria-label={label} style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {opts.map(({ label: o, Icon }) => {
         const on = isOn(o);
@@ -469,6 +481,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
           </button>
         );
       })}
+      {extra}
     </div>
   );
 
@@ -492,9 +505,17 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         {!hero ? (
           <button type="button" onClick={() => setSheet("gallery")} aria-label="Add photos or videos"
             style={{ position: "relative", width: "100%", height: 196, borderRadius: 20, overflow: "hidden", background: "linear-gradient(180deg, #EEF3FD 0%, #E3ECFB 100%)", display: "grid", placeItems: "center", alignContent: "center", gap: 6, padding: "0 24px" }}>
-            <svg aria-hidden viewBox="0 0 340 90" preserveAspectRatio="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, width: "100%", height: 90 }}>
-              <path d="M0 90 L0 60 L70 22 L130 55 L200 8 L270 48 L340 30 L340 90 Z" fill="#D6E2F7" />
-            </svg>
+            {/* a mountain watermark that drifts in an endless loop: two ranges at different speeds */}
+            <span aria-hidden className="ridge-loop" style={{ position: "absolute", left: 0, bottom: 0, width: "200%", height: 104, animationDuration: "38s" }}>
+              <svg viewBox="0 0 680 104" preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }}>
+                <path d="M0 104 L0 62 L60 30 L120 58 L190 18 L250 50 L300 34 L340 62 L400 30 L460 58 L530 18 L590 50 L640 34 L680 62 L680 104 Z" fill="#DFE8F8" />
+              </svg>
+            </span>
+            <span aria-hidden className="ridge-loop" style={{ position: "absolute", left: 0, bottom: 0, width: "200%", height: 70, animationDuration: "22s" }}>
+              <svg viewBox="0 0 680 70" preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }}>
+                <path d="M0 70 L0 44 L70 14 L130 40 L200 4 L270 34 L340 44 L410 14 L470 40 L540 4 L610 34 L680 44 L680 70 Z" fill="#D2DEF5" />
+              </svg>
+            </span>
             <ImageSquare size={40} color="#6B7A99" style={{ position: "relative" }} />
             <span style={{ position: "relative", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>No photos or videos yet</span>
             <span style={{ position: "relative", fontSize: 13, color: "var(--gray)" }}>Add photos to bring your activity to life.</span>
@@ -662,12 +683,12 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         {chips("Mark this day", MARKS, (o) => mark === o, (o) => setMark(mark === o ? null : o))}
 
         {head("Tags", true)}
-        {chips("Tags", tagList.map((label) => ({ label })), (o) => tags.includes(o), (o) => setTags(tags.includes(o) ? tags.filter((x) => x !== o) : [...tags, o]))}
-        <AddOwn placeholder="Add your own tag" onAdd={(t) => { if (!tagList.includes(t)) setTagList([...tagList, t]); if (!tags.includes(t)) setTags([...tags, t]); }} />
+        {chips("Tags", tagList.map((label) => ({ label })), (o) => tags.includes(o), (o) => setTags(tags.includes(o) ? tags.filter((x) => x !== o) : [...tags, o]),
+          <AddChip label="Add tag" placeholder="New tag" onAdd={(t) => { if (!tagList.includes(t)) setTagList([...tagList, t]); if (!tags.includes(t)) setTags([...tags, t]); }} />)}
 
         {head("Gear", true)}
-        {chips("Gear", gearList.map((label) => ({ label, Icon: Sneaker })), (o) => gear === o, (o) => setGear(gear === o ? null : o))}
-        <AddOwn placeholder="Add new gear" onAdd={(g) => { setGearList((l) => (l.includes(g) ? l : [...l, g])); setGear(g); }} />
+        {chips("Gear", gearList.map((label) => ({ label, Icon: Sneaker })), (o) => gear === o, (o) => setGear(gear === o ? null : o),
+          <AddChip label="Add gear" placeholder="Gear name" onAdd={(g) => { setGearList((l) => (l.includes(g) ? l : [...l, g])); setGear(g); }} />)}
 
         {head("With whom", true)}
         {chips("With whom", WITH, (o) => withWhom === o, (o) => setWithWhom(withWhom === o ? null : o))}
