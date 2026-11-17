@@ -14,6 +14,7 @@ import Record from "./screens/Record";
 import Summary from "./screens/Summary";
 import Timeline from "./screens/Timeline";
 import Profile from "./screens/Profile";
+import AddActivity from "./screens/AddActivity";
 
 const screens: { id: Route; name: string; note: string }[] = [
   { id: "splash", name: "Splash", note: "Launch" },
@@ -26,6 +27,7 @@ const screens: { id: Route; name: string; note: string }[] = [
   { id: "home", name: "Home", note: "Goal and week" },
   { id: "search", name: "Search", note: "Find anything" },
   { id: "record", name: "Record", note: "Live tracking" },
+  { id: "manual", name: "Add activity", note: "Log one by hand" },
   { id: "summary", name: "Activity", note: "After a session" },
   { id: "timeline", name: "Timeline", note: "History" },
   { id: "profile", name: "Profile", note: "You" },
@@ -62,6 +64,7 @@ export default function App() {
     home: <Home go={go} profile={profile} />,
     search: <Search go={go} />,
     record: <Record go={go} />,
+    manual: <AddActivity go={go} />,
     summary: <Summary go={go} />,
     timeline: <Timeline go={go} />,
     profile: <Profile go={go} profile={profile} />,

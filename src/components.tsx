@@ -1,12 +1,13 @@
-import { motion } from "motion/react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { WORD } from "./wordmark";
 import type { SportIconType } from "./sportIcons";
 import {
   CellSignalFull, WifiHigh, BatteryFull,
-  House, MagnifyingGlass, ClockCounterClockwise, UserCircle, Plus, ArrowLeft,
+  House, MagnifyingGlass, ClockCounterClockwise, UserCircle, Plus, ArrowLeft, RecordIcon, NotePencil, Images,
 } from "@phosphor-icons/react";
 
-export type Route = "splash" | "welcome" | "login" | "signup" | "onboarding" | "hello" | "pro" | "home" | "search" | "record" | "summary" | "timeline" | "profile";
+export type Route = "splash" | "welcome" | "login" | "signup" | "onboarding" | "hello" | "pro" | "home" | "search" | "record" | "summary" | "timeline" | "profile" | "manual";
 
 export function StatusBar({ onBlue = false }: { onBlue?: boolean }) {
   return (
@@ -57,18 +58,52 @@ export function TabBar({ route, go }: { route: Route; go: (r: Route) => void }) 
       </button>
     );
   };
+  // + opens a small menu: record live, log one by hand, or start from photos
+  const [open, setOpen] = useState(false);
+  const pick = (r: Route, photos = false) => { setOpen(false); addWith.photos = photos; go(r); };
+  const items: [string, string, typeof House, () => void][] = [
+    ["Record live", "Track it with GPS as you go", RecordIcon, () => pick("record")],
+    ["Manual activity", "Log something you already did", NotePencil, () => pick("manual")],
+    ["Photos", "Start from your pictures", Images, () => pick("manual", true)],
+  ];
   return (
-    <nav className="tabbar" aria-label="Main">
-      {tabs.slice(0, 2).map((t) => <Tab key={t.id} {...t} />)}
-      <div style={{ display: "grid", placeItems: "center" }}>
-        <button className="record-fab" aria-label="Record an activity" onClick={() => go("record")}>
-          <Plus size={26} weight="bold" />
-        </button>
-      </div>
-      {tabs.slice(2).map((t) => <Tab key={t.id} {...t} />)}
-    </nav>
+    <>
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div key="scrim" aria-hidden onClick={() => setOpen(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              style={{ position: "absolute", inset: 0, zIndex: 29, background: "rgba(11,18,32,0.32)" }} />
+            <motion.div key="menu" role="menu" aria-label="Add" initial={{ opacity: 0, y: 12, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }} onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+              style={{ position: "absolute", left: 20, right: 20, bottom: 100, zIndex: 31, padding: 6, borderRadius: 22, background: "#fff", boxShadow: "0 24px 48px -16px rgba(11,18,32,0.35)", transformOrigin: "50% 100%" }}>
+              {items.map(([t, sub, Icon, on], i) => (
+                <button key={t} role="menuitem" autoFocus={i === 0} onClick={on}
+                  style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "10px 12px", borderRadius: 16, textAlign: "left" }}>
+                  <span aria-hidden style={{ width: 42, height: 42, borderRadius: 13, display: "grid", placeItems: "center", background: "var(--blue-50)", color: "var(--blue)", flex: "none" }}><Icon size={22} weight="duotone" /></span>
+                  <span style={{ flex: 1 }}>
+                    <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>{t}</span>
+                    <span className="cap" style={{ fontSize: 13 }}>{sub}</span>
+                  </span>
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      <nav className="tabbar" aria-label="Main">
+        {tabs.slice(0, 2).map((t) => <Tab key={t.id} {...t} />)}
+        <div style={{ display: "grid", placeItems: "center" }}>
+          <button className="record-fab" aria-label={open ? "Close add menu" : "Add an activity"} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            <Plus size={26} weight="bold" style={{ transform: open ? "rotate(45deg)" : "none", transition: "transform .25s var(--ease)" }} />
+          </button>
+        </div>
+        {tabs.slice(2).map((t) => <Tab key={t.id} {...t} />)}
+      </nav>
+    </>
   );
 }
+/* What the + menu asked for when it opened Add activity (start straight at the photo picker) */
+export const addWith = { photos: false };
 
 /* Progress ring. Track is quiet, the arc carries the splash. */
 export function Ring({ p, size = 120, stroke = 10, track = "rgba(255,255,255,0.18)", id = "ring" }: {

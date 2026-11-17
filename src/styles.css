@@ -48,6 +48,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums; /* one digit style for every number in the app */
 }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 input, textarea { font: inherit; color: inherit; }
@@ -238,7 +239,7 @@ blockquote {
 /* Welcome headline: the same Inter, heavier and larger, in sentence case */
 .sport-title {
   font-family: var(--font);
-  font-weight: 700 !important;
+  font-weight: 620 !important;
   font-size-adjust: none;
   letter-spacing: -0.02em !important;
   line-height: 1.08;

@@ -112,7 +112,7 @@ const clean = (v: string, dec?: boolean) => {
   if (dec) { const [a, ...b] = t.split("."); t = b.length ? `${a}.${b.join("").slice(0, 2)}` : a; }
   return t.replace(/^0+(?=\d)/, "").slice(0, 9);
 };
-const fieldErr = (msg?: string) => msg ? <p className="err" role="alert" style={{ marginTop: 6 }}>{msg}</p> : null;
+export const fieldErr = (msg?: string) => msg ? <p className="err" role="alert" style={{ marginTop: 6 }}>{msg}</p> : null;
 
 /* Unit picker that matches the app: a quiet button in the field, opening a small card of options.
    Arrow keys move, Enter or Space picks, Escape or a tap outside closes. */
@@ -164,7 +164,7 @@ function UnitMenu({ label, units, unit, onUnit }: { label: string; units: string
 }
 
 /* A number and its unit in one box: the unit is a fixed suffix, or a small menu when there's a choice */
-function NumField({ id, label, optional, value, onChange, decimals, suffix, units, unit, onUnit, error, placeholder }: {
+export function NumField({ id, label, optional, value, onChange, decimals, suffix, units, unit, onUnit, error, placeholder }: {
   id: string; label: string; optional?: boolean; value: number; onChange: (v: number) => void; decimals?: boolean; suffix?: string;
   units?: string[]; unit?: string; onUnit?: (u: string) => void; error?: string; placeholder?: string;
 }) {
@@ -220,7 +220,7 @@ const SkeletonRow = () => (
 /* Places for a Reps or Laps reference, found like a map search: with location on, saved places and places
    near you are sorted by how far away they are and the search box looks around you; with it off, only saved
    places show. One tap to pick (tap again to clear), or add a new one inline. */
-function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAskLoc }: {
+export function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAskLoc }: {
   noun: "rep" | "lap"; places: Place[]; selected?: string; onSelect: (p: Place | null) => void; onAdd: (p: Place) => void; onNew: () => void; loc: LocState; onAskLoc: () => void;
 }) {
   const [q, setQ] = useState("");
@@ -359,7 +359,7 @@ function MapArt() {
 
 /* Add a place: drag the map under a fixed pin (or tap a place on it). The pin snaps to a known place and
    fills its name and length; anywhere else it names the spot by its area and suggests a length for the type. */
-function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "lap"; seed?: string; gps: boolean; onSave: (p: Place) => void; onClose: () => void }) {
+export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "lap"; seed?: string; gps: boolean; onSave: (p: Place) => void; onClose: () => void }) {
   const VH = 230;
   const box = useRef<HTMLDivElement>(null);
   const [vw, setVw] = useState(334);
@@ -461,7 +461,7 @@ function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "la
 }
 
 /* Asks before using location: says why, offers both allow choices and a clear no */
-function LocationSheet({ onAllow, onDeny }: { onAllow: () => void; onDeny: () => void }) {
+export function LocationSheet({ onAllow, onDeny }: { onAllow: () => void; onDeny: () => void }) {
   return (
     <Sheet id="loc" title="Allow Ennoo to use your location?" onClose={onDeny}>
       <div aria-hidden style={{ position: "relative", height: 132, margin: "16px 0 4px", borderRadius: 18, overflow: "hidden", background: "var(--blue-50)" }}>
@@ -486,7 +486,7 @@ const DIST_UNITS = ["km", "mi", "m"] as const;
 const TO_M = { km: 1000, mi: 1609.344, m: 1 };
 const wholesFor = (u: string) => (u === "m" ? Array.from({ length: 500 }, (_, i) => (i + 1) * 100) : Array.from({ length: 5000 }, (_, i) => i + 1));
 const presetsFor = (u: string) => (u === "m" ? [1000, 5000, 10000, 21100, 42200] : [50, 100, 250, 500, 1000]);
-function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance", cta = "Set distance" }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; title?: string; cta?: string }) {
+export function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance", cta = "Set distance" }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; title?: string; cta?: string }) {
   const place = (v: number, u: string) => {
     const ws = wholesFor(u);
     if (u === "m") { const i = Math.max(0, Math.min(ws.length - 1, Math.round(v / 100) - 1)); return { w: i, d: 0 }; }
@@ -574,7 +574,7 @@ const readout = (text: string | null, err: string | false) => (
 /* Total time on hour and minute wheels */
 const HOURS = Array.from({ length: 1000 }, (_, i) => String(i));
 const MINS = Array.from({ length: 12 }, (_, i) => i * 5);
-function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; onSave: (hours: number) => void; onClose: () => void; title: string; cta: string }) {
+export function DurationSheet({ value, onSave, onClose, title, cta }: { value: number; onSave: (hours: number) => void; onClose: () => void; title: string; cta: string }) {
   const split = (v: number) => { const t = Math.round(v * 12) / 12; return { h: Math.min(999, Math.floor(t)), mi: Math.round((t - Math.floor(t)) * 12) % 12 }; };
   const [{ h, mi }, setPos] = useState(() => split(value));
   const [custom, setCustom] = useState(false);
@@ -685,7 +685,7 @@ function timePresets(fmt: "hms" | "sec", base: number) {
   const snap = (t: number) => (fmt === "hms" ? (base < 600 ? Math.max(5, Math.round(t / 5) * 5) : Math.max(60, Math.round(t / 60) * 60)) : Math.max(0.5, Math.round(t * 2) / 2));
   return [...new Set([0.85, 0.9, 1, 1.1, 1.2].map((f) => snap(base * f)))];
 }
-function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void }) {
+export function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void }) {
   const cols = TIME_COLS[fmt];
   const split = (t: number) => fmt === "hms"
     ? [Math.min(23, Math.floor(t / 3600)), Math.floor((t % 3600) / 60), Math.round(t % 60) % 60]
@@ -732,7 +732,7 @@ function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string;
 }
 
 /* A field that shows its value and opens a bottom sheet to change it: the one input pattern for goal numbers */
-function SheetField({ label, optional, Icon, value, unit, empty, onOpen, onClear, error, help }: {
+export function SheetField({ label, optional, Icon, value, unit, empty, onOpen, onClear, error, help }: {
   label: string; optional?: boolean; Icon: typeof Target | SportIconType; value: string | null; unit?: string; empty: string;
   onOpen: () => void; onClear?: () => void; error?: string; help?: string;
 }) {
@@ -1046,12 +1046,14 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   useEffect(() => () => { if (photo) URL.revokeObjectURL(photo); }, [photo]);
   const pickPhoto = (f?: File) => { if (f && f.type.startsWith("image/")) setPhoto(URL.createObjectURL(f)); };
 
-  // labels along the card's route: today, three quarter stops, the finish
+  // labels along the card's route: today, three quarter stops, the finish.
+  // what's already done is where today starts, and the quarters split only what is left
   const parts = goalParts(goal);
+  const done = m !== "performance" && m !== "weight" ? Math.min(Math.max(goal.current, 0), goal.target) : 0;
   const routeVals = [0, 1, 2, 3, 4].map((i) =>
     m === "performance" ? (i === 4 ? fmtTime(goal.target) : i === 0 && goal.best ? `best ${fmtTime(goal.best)}` : "")
       : m === "weight" ? `${fmtN(Math.round((goal.current + ((goal.target - goal.current) * i) / 4) * 10) / 10)} ${goal.unit}`
-      : amount(goal, m === "duration" ? Math.round((goal.target * i) / 4 * 2) / 2 : Math.round((goal.target * i) / 4)));
+      : amount(goal, i === 4 ? goal.target : m === "duration" ? Math.round((done + ((goal.target - done) * i) / 4) * 2) / 2 : Math.round(done + ((goal.target - done) * i) / 4)));
   const note = {
     distance: `All your recorded ${actLower} distance is added to this goal.`,
     duration: `All your recorded ${actLower} time is added to this goal.`,
@@ -1377,7 +1379,7 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   </p>
                   {/* 3. the plan, quiet, in the middle */}
                   <div style={{ flex: "1 1 0", minHeight: 96, margin: "26px -4px 34px" }}>
-                    <GoalRoute days={days} vals={routeVals} started={false} Icon={act.Icon} />
+                    <GoalRoute days={days} vals={routeVals} started={done > 0} Icon={act.Icon} />
                   </div>
                   {/* 4. the motto closes the card, set apart by a hairline */}
                   {motto.trim() && (

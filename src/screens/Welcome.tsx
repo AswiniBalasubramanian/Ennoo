@@ -69,9 +69,9 @@ export default function Welcome({ go }: { go: (r: Route) => void }) {
       </motion.div>
 
       <div style={{ position: "absolute", left: 24, right: 24, bottom: 28 }}>
-        {/* bold upright headline; the second line is highlighted in full white */}
-        <motion.h1 {...rise(reduce ? 0 : 1.6)} className="sport-title" style={{ fontSize: 34, paddingBottom: 2 }}>
-          <span style={{ color: "rgba(255,255,255,0.82)" }}>Your activities.</span><br /><span style={{ color: "#fff" }}>Remembered forever.</span>
+        {/* upright headline, both lines solid white */}
+        <motion.h1 {...rise(reduce ? 0 : 1.6)} className="sport-title" style={{ fontSize: 34, paddingBottom: 2, color: "#fff" }}>
+          Your activities.<br />Remembered forever.
         </motion.h1>
         <motion.p {...rise(reduce ? 0 : 1.75)} style={{ marginTop: 14, fontSize: 16, lineHeight: 1.5, color: "rgba(255,255,255,0.72)", maxWidth: "30ch" }}>
           Track, understand and keep everything you do, in one place.
