@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { X } from "@phosphor-icons/react";
+import { StatusBar } from "./components";
 
 /* How much of the screen the on-screen keyboard covers, so a sheet can sit just above it.
    Mobile browsers shrink the visual viewport, not the layout, when the keypad opens. */
@@ -18,24 +19,48 @@ export function useKeyboardInset() {
 
 /* Bottom sheet: scrim, grab handle, title, close. Escape closes it; it rides above the keypad.
    Render inside <AnimatePresence> so it slides out on close. */
-export function Sheet({ id, title, sub, onClose, children }: { id: string; title: string; sub?: React.ReactNode; onClose: () => void; children: React.ReactNode }) {
+/* expandable: a long list. Scrolling it grows the sheet to the full screen so it reads as a page,
+   with the title (and `head`, e.g. a search box) pinned at the top. Scrolling back to the top returns it to a sheet. */
+export function Sheet({ id, title, sub, onClose, children, expandable, head }: {
+  id: string; title: string; sub?: React.ReactNode; onClose: () => void; children: React.ReactNode; expandable?: boolean; head?: React.ReactNode;
+}) {
   const kb = useKeyboardInset();
+  const [full, setFull] = useState(false);
+  const titleRow = (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+      <div>
+        <h2 id={`${id}-title`} className="h2" style={{ fontSize: 20 }}>{title}</h2>
+        {sub && <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45 }}>{sub}</p>}
+      </div>
+      <button type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ border: 0, marginRight: -10, marginTop: -6, flex: "none" }}><X size={20} weight="bold" /></button>
+    </div>
+  );
   return (
     <motion.div key={id} initial={{ opacity: 1 }} exit={{ opacity: 1 }} transition={{ duration: 0.3 }}
       style={{ position: "absolute", inset: 0, zIndex: 30, display: "flex", alignItems: "flex-end", paddingBottom: kb, transition: "padding-bottom .25s var(--ease)" }}>
       <motion.div aria-hidden onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
         style={{ position: "absolute", inset: 0, background: "rgba(11,18,32,0.42)" }} />
       <motion.div role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        onScroll={expandable ? (e) => { const t = e.currentTarget.scrollTop; if (t > 12 && !full) setFull(true); else if (t <= 0 && full) setFull(false); } : undefined}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 420, damping: 40 }}
-        style={{ position: "relative", width: "100%", maxHeight: "92%", overflowY: "auto", background: "#fff", borderRadius: "24px 24px 0 0", padding: kb ? "10px 20px 14px" : "10px 20px 28px", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)" }}>
-        <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 12px" }} />
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-          <div>
-            <h2 id={`${id}-title`} className="h2" style={{ fontSize: 20 }}>{title}</h2>
-            {sub && <p className="meta" style={{ fontSize: 14, marginTop: 4, lineHeight: 1.45 }}>{sub}</p>}
+        style={{ position: "relative", width: "100%", overflowY: "auto", background: "#fff", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)",
+          ...(expandable
+            ? { height: full ? "100%" : "88%", borderRadius: full ? 0 : "24px 24px 0 0", padding: kb ? "0 20px 14px" : "0 20px 28px", transition: "height .32s var(--ease), border-radius .32s var(--ease)" }
+            : { maxHeight: "92%", borderRadius: "24px 24px 0 0", padding: kb ? "10px 20px 14px" : "10px 20px 28px" }) }}>
+        {expandable ? (
+          <div style={{ position: "sticky", top: 0, zIndex: 2, margin: "0 -20px", padding: `${full ? 52 : 10}px 20px 12px`, background: "#fff",
+            borderBottom: `1px solid ${full ? "var(--line)" : "transparent"}`, transition: "padding-top .32s var(--ease), border-color .2s" }}>
+            {full && <StatusBar />}
+            <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 12px", opacity: full ? 0 : 1, transition: "opacity .2s" }} />
+            {titleRow}
+            {head}
           </div>
-          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose} style={{ border: 0, marginRight: -10, marginTop: -6, flex: "none" }}><X size={20} weight="bold" /></button>
-        </div>
+        ) : (
+          <>
+            <span aria-hidden style={{ display: "block", width: 36, height: 4, borderRadius: 2, background: "var(--line)", margin: "0 auto 12px" }} />
+            {titleRow}
+          </>
+        )}
         {children}
       </motion.div>
     </motion.div>

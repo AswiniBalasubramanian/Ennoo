@@ -3,13 +3,13 @@ import { motion, AnimatePresence, Reorder, useDragControls } from "motion/react"
 import {
   ArrowLeft, CaretLeft, CaretRight, MagnifyingGlass, Check, CheckCircle, Plus, Star, Trash, DotsSixVertical, DotsThree,
   CalendarBlank, Clock, ImageSquare, Images, X, MapPin, CaretDown, Info,Mountains, Metronome, Repeat,
-  Sneaker, Flag, Heartbeat, Fire, Gauge, Trophy, Medal, FlagCheckered,
+  Sneaker, Flag, Heartbeat, Fire, Gauge, Bandaids, CloudRain,
 } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, addWith, type Route } from "../components";
 import { Sheet, Wheel, WheelBand } from "../sheet";
 import { activities, byId, groupInfo, groupOrder, matches, goal, otherGoals, type Activity } from "../data";
 import { METRICS, fmtN, fmtTime } from "../metrics";
-import { NumField,TimeSheet, DistanceSheet, fieldErr } from "./Onboarding";
+import { NumField, TimeSheet, DistanceSheet, SheetFooter, fieldErr } from "./Onboarding";
 
 /*
   Add activity, laid out like an activity's details page: photos on top, the title with its date and place,
@@ -28,7 +28,7 @@ function ActivitySheet({ value, onPick, onClose }: { value: string; onPick: (id:
     const on = a.id === value;
     return (
       <button key={a.id} type="button" role="radio" aria-checked={on} onClick={() => onPick(a.id)}
-        style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", minHeight: 52, padding: "4px 2px", textAlign: "left" }}>
+        style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", minHeight: 60, padding: "8px 2px", marginTop: 4, textAlign: "left" }}>
         <SportIcon Icon={a.Icon} size={26} selected={on} />
         <span style={{ flex: 1, fontSize: 16, fontWeight: on ? 600 : 500, color: on ? "var(--blue)" : "var(--ink)" }}>{a.name}</span>
         {on && <Check size={20} weight="bold" color="var(--blue)" aria-hidden />}
@@ -36,12 +36,13 @@ function ActivitySheet({ value, onPick, onClose }: { value: string; onPick: (id:
     );
   };
   return (
-    <Sheet id="act" title="Choose activity" onClose={onClose}>
+    <Sheet id="act" title="Choose activity" onClose={onClose} expandable head={
       <div style={{ position: "relative", marginTop: 14 }}>
         <MagnifyingGlass size={17} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 15 }} />
         <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search activities" aria-label="Search activities"
           style={{ height: 46, paddingLeft: 40, background: "var(--bg)", borderColor: "transparent" }} />
       </div>
+    }>
       <div role="radiogroup" aria-label="Activity">
         {!q.trim() && (
           <>
@@ -67,7 +68,7 @@ function ActivitySheet({ value, onPick, onClose }: { value: string; onPick: (id:
           if (!items.length) return null;
           return (
             <section key={g}>
-              <h3 className="h2" style={{ fontSize: 16, margin: "20px 0 4px", paddingTop: 16, borderTop: "1px solid var(--line)" }}>{groupInfo[g].label}</h3>
+              <h3 className="h2" style={{ fontSize: 16, margin: "24px 0 8px", paddingTop: 20, borderTop: "1px solid var(--line)" }}>{groupInfo[g].label}</h3>
               {items.map(row)}
             </section>
           );
@@ -177,10 +178,6 @@ const dateName = (d: Date, now: Date) => {
   const full = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   return sameDay(d, now) ? `Today, ${full}` : sameDay(d, y) ? `Yesterday, ${full}` : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 };
-const dayShort = (d: Date, now: Date) => {
-  const y = new Date(now); y.setDate(y.getDate() - 1);
-  return sameDay(d, now) ? "Today" : sameDay(d, y) ? "Yesterday" : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
-};
 const timeName = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 function DateSheet({ value, now, onSave, onClose }: { value: Date; now: Date; onSave: (d: Date) => void; onClose: () => void }) {
@@ -278,15 +275,12 @@ function NumberSheet({ title, sub, label, suffix, decimals, units, unit, value, 
       <div style={{ marginTop: 14 }}>
         <NumField id="num-in" label={label} value={v} onChange={setV} decimals={decimals} suffix={units ? undefined : suffix} units={units} unit={u} onUnit={setU} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: value > 0 ? "1fr 2fr" : "1fr", gap: 8, marginTop: 16 }}>
-        {value > 0 && <button type="button" className="btn btn-soft" style={{ color: "#d92d20" }} onClick={() => { onRemove(); onClose(); }}>Remove</button>}
-        <button type="button" className="btn btn-blue" disabled={!(v > 0)} onClick={() => { onSave(v, u); onClose(); }}>Save</button>
-      </div>
+      <SheetFooter cta="Save" disabled={!(v > 0)} onSave={() => { onSave(v, u); onClose(); }} onRemove={value > 0 ? onRemove : undefined} />
     </Sheet>
   );
 }
 
-function IntervalsSheet({ value, onSave, onClose }: { value: { reps: number; m: number }[]; onSave: (v: { reps: number; m: number }[]) => void; onClose: () => void }) {
+function IntervalsSheet({ value, onSave, onRemove, onClose }: { value: { reps: number; m: number }[]; onSave: (v: { reps: number; m: number }[]) => void; onRemove: () => void; onClose: () => void }) {
   const [list, setList] = useState(value.length ? value : [{ reps: 0, m: 0 }]);
   const set = (i: number, k: "reps" | "m", v: number) => setList(list.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
   return (
@@ -301,10 +295,7 @@ function IntervalsSheet({ value, onSave, onClose }: { value: { reps: number; m: 
         ))}
         <button type="button" className="link" onClick={() => setList([...list, { ...list[list.length - 1] }])}><Plus size={16} weight="bold" />Add another set</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: value.length ? "1fr 2fr" : "1fr", gap: 8, marginTop: 16 }}>
-        {value.length > 0 && <button type="button" className="btn btn-soft" style={{ color: "#d92d20" }} onClick={() => { onSave([]); onClose(); }}>Remove</button>}
-        <button type="button" className="btn btn-blue" disabled={!list.some((x) => x.reps > 0)} onClick={() => { onSave(list.filter((x) => x.reps > 0)); onClose(); }}>Save intervals</button>
-      </div>
+      <SheetFooter cta="Save intervals" disabled={!list.some((x) => x.reps > 0)} onSave={() => { onSave(list.filter((x) => x.reps > 0)); onClose(); }} onRemove={value.length ? onRemove : undefined} />
     </Sheet>
   );
 }
@@ -336,7 +327,7 @@ const ENTRY_LABEL: Record<Entry, string> = { distance: "distance", duration: "ti
 // Microsoft Fluent Emoji (3D), served from the fluentui-emoji repo
 const fluent = (name: string) => `https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/${encodeURIComponent(name)}/3D/${name.toLowerCase().replace(/ /g, "_")}_3d.png`;
 const FEELS = [["Awful", fluent("Weary face")], ["Poor", fluent("Slightly frowning face")], ["Okay", fluent("Neutral face")], ["Good", fluent("Slightly smiling face")], ["Amazing", fluent("Smiling face with heart-eyes")]] as const;
-const MARKS: Opt[] = [{ label: "Favorite", Icon: Star }, { label: "Personal best", Icon: Trophy }, { label: "Race day", Icon: FlagCheckered }, { label: "Milestone", Icon: Medal }];
+const MARKS: Opt[] = [{ label: "Favorite", Icon: Star }, { label: "Injury", Icon: Bandaids }, { label: "Bad day", Icon: CloudRain }];
 const WITH: Opt[] = [{ label: "Solo" }, { label: "With friends" }, { label: "With family" }, { label: "With my club" }, { label: "With a coach" }];
 const partOfDay = (d: Date) => { const h = d.getHours(); return h < 12 ? "Morning" : h < 17 ? "Afternoon" : h < 21 ? "Evening" : "Night"; };
 
@@ -379,6 +370,9 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
   const [tried, setTried] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [askRemove, setAskRemove] = useState<string | null>(null);
+  const [undo, setUndo] = useState<{ label: string; restore: () => void } | null>(null);
+  const undoTimer = useRef<number>(0);
   const metricsRow = useRef<HTMLElement>(null);
   const placeRef = useRef<HTMLInputElement>(null);
 
@@ -414,16 +408,6 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
   const needs = entries.map((e) => ENTRY_LABEL[e]);
   const needsText = needs.length > 2 ? `${needs.slice(0, -1).join(", ")} or ${needs[needs.length - 1]}` : needs.join(" or ");
 
-  // the band under the title: up to three of what was entered
-  const stats: { label: string; v: string; u?: string; Icon: typeof Star }[] = [];
-  if (has.distance) stats.push({ label: "Distance", v: fmtN(dist.v), u: dist.u, Icon: METRICS.distance.Icon as typeof Star });
-  if (has.duration) stats.push({ label: "Duration", v: fmtTime(time), Icon: METRICS.duration.Icon as typeof Star });
-  if (pace && extras.includes("pace")) stats.push({ label: "Pace", v: paceText, u: paceUnit, Icon: Gauge });
-  for (const e of ["reps", "laps", "steps", "count"] as const) if (has[e]) stats.push({ label: e === "count" ? "Skips" : METRICS[e].label, v: fmtN(num(e)), Icon: METRICS[e].Icon as typeof Star });
-  if (has.weight) stats.push({ label: "Body weight", v: fmtN(num("weight")), u: weightU, Icon: METRICS.weight.Icon as typeof Star });
-  if (extraHas.hr) stats.push({ label: "Heart rate", v: fmtN(num("hr")), u: "bpm", Icon: Heartbeat });
-  if (extraHas.cal) stats.push({ label: "Calories", v: fmtN(num("cal")), u: "kcal", Icon: Fire });
-
   const save = () => {
     setTried(true);
     if (goalFilled) return finish();
@@ -451,6 +435,17 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
   const unitOf = (k: string) => (k === "weight" ? weightU : NUM[k]?.suffix);
   const openFor = (k: string) => () => setSheet(k === "distance" ? "dist" : k === "duration" ? "time" : k === "intervals" ? "intervals" : `num:${k}`);
   const clearFor = (k: string) => () => (k === "distance" ? setDist({ ...dist, v: 0 }) : k === "duration" ? setTime(0) : k === "intervals" ? setIntervals([]) : setNum(k)(0));
+  const labelOf = (k: string) => (k === "distance" ? "Distance" : k === "duration" ? "Duration" : k === "intervals" ? "Mixed intervals" : NUM[k]?.label ?? k);
+  const valueOf = (k: string) => k === "distance" ? `${fmtN(dist.v)} ${dist.u}` : k === "duration" ? fmtTime(time) : k === "intervals" ? `${intervals.length} interval set${intervals.length > 1 ? "s" : ""}` : `${fmtN(num(k))} ${unitOf(k) ?? ""}`.trim();
+  const askToRemove = (k: string) => () => { setSheet(null); setAskRemove(k); };
+  const doRemove = (k: string) => {
+    const before = { dist, time, n: { ...n }, intervals };
+    clearFor(k)();
+    setAskRemove(null);
+    window.clearTimeout(undoTimer.current);
+    setUndo({ label: `${labelOf(k)} removed`, restore: () => { setDist(before.dist); setTime(before.time); setN(before.n); setIntervals(before.intervals); } });
+    undoTimer.current = window.setTimeout(() => setUndo(null), 5000);
+  };
   const tileKeys: string[] = [...entries, ...(act.id === "weightmgmt" ? ["duration"] : [])];
   const tiles = tileKeys.map((k) => ({
     key: k, goal: (entries as string[]).includes(k), open: openFor(k),
@@ -500,24 +495,23 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         </header>
       </div>
 
-      <div className="pad" style={{ paddingTop: 6, paddingBottom: 132 }}>
-        {/* photos */}
+      <div className="pad" style={{ paddingTop: 10, paddingBottom: 132 }}>
+        {/* the sketch order: sport, title, how it went, photos, date and time, location */}
+        <button type="button" className="nf" onClick={() => setSheet("act")} aria-label={`Activity, ${act.name}. Change`} style={{ width: "100%", height: 56, padding: "0 14px", gap: 12, cursor: "pointer" }}>
+          <SportIcon Icon={act.Icon} size={24} />
+          <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600 }}>{act.name}</span>
+          <CaretDown size={18} color="var(--gray)" aria-hidden />
+        </button>
+        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Title your ${act.name.toLowerCase()}`} aria-label="Title" maxLength={80} style={{ marginTop: 12 }} />
+        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How'd it go?" aria-label="How did it go" rows={4}
+          style={{ height: "auto", marginTop: 12, padding: "13px 16px", lineHeight: 1.45, resize: "none", fontFamily: "inherit" }} />
+
+        <div style={{ marginTop: 12 }}>
         {!hero ? (
           <button type="button" onClick={() => setSheet("gallery")} aria-label="Add photos or videos"
-            style={{ position: "relative", width: "100%", height: 196, borderRadius: 20, overflow: "hidden", background: "linear-gradient(180deg, #EEF3FD 0%, #E3ECFB 100%)", display: "grid", placeItems: "center", alignContent: "center", gap: 6, padding: "0 24px" }}>
-            {/* a mountain watermark that drifts in an endless loop: two ranges at different speeds */}
-            <span aria-hidden className="ridge-loop" style={{ position: "absolute", left: 0, bottom: 0, width: "200%", height: 104, animationDuration: "38s" }}>
-              <svg viewBox="0 0 680 104" preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }}>
-                <path d="M0 104 L0 62 L60 30 L120 58 L190 18 L250 50 L300 34 L340 62 L400 30 L460 58 L530 18 L590 50 L640 34 L680 62 L680 104 Z" fill="#DFE8F8" />
-              </svg>
-            </span>
-            <span aria-hidden className="ridge-loop" style={{ position: "absolute", left: 0, bottom: 0, width: "200%", height: 70, animationDuration: "22s" }}>
-              <svg viewBox="0 0 680 70" preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }}>
-                <path d="M0 70 L0 44 L70 14 L130 40 L200 4 L270 34 L340 44 L410 14 L470 40 L540 4 L610 34 L680 44 L680 70 Z" fill="#D2DEF5" />
-              </svg>
-            </span>
-            <ImageSquare size={40} color="#6B7A99" style={{ position: "relative" }} />
-            <span style={{ position: "relative", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>No photos or videos yet</span>
+            style={{ position: "relative", width: "100%", height: 150, borderRadius: 18, overflow: "hidden", border: "1.5px dashed #8DB4FF", background: "linear-gradient(180deg, #F4F7FE 0%, #EAF0FC 100%)", display: "grid", placeItems: "center", alignContent: "center", gap: 6, padding: "0 24px" }}>
+            <ImageSquare size={34} color="var(--blue)" style={{ position: "relative" }} />
+            <span style={{ position: "relative", fontSize: 15, fontWeight: 600, color: "var(--blue)" }}>Add photos or videos</span>
             <span style={{ position: "relative", fontSize: 13, color: "var(--gray)" }}>Add photos to bring your activity to life.</span>
           </button>
         ) : (
@@ -551,71 +545,24 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
             {media.length > 1 && <button type="button" className="link" style={{ justifySelf: "end", fontSize: 14 }} onClick={() => setPage("order")}>Edit order</button>}
           </div>
         )}
-
-        {/* who, what, when, where */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 16 }}>
-          <button type="button" onClick={() => setSheet("act")} aria-label={`Activity, ${act.name}. Change`}
-            style={{ width: 64, height: 64, flex: "none", borderRadius: "50%", background: "var(--blue-50)", display: "grid", placeItems: "center" }}>
-            <SportIcon Icon={act.Icon} size={30} selected />
-          </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={autoTitle} aria-label="Title" maxLength={80}
-              style={{ width: "100%", border: 0, outline: "none", padding: 0, fontSize: 22, fontWeight: 650, letterSpacing: "-0.02em", color: "var(--ink)", background: "transparent" }} />
-            <p className="meta num" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, marginTop: 4 }}>
-              <CalendarBlank size={15} aria-hidden />{when.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} at {timeName(when)}
-            </p>
-            <button type="button" onClick={() => { placeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); placeRef.current?.focus({ preventScroll: true }); }} className="meta" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, marginTop: 4, color: placeName ? "var(--ink)" : "var(--gray)" }}>
-              <MapPin size={15} weight={placeName ? "fill" : "regular"} aria-hidden />{placeName || "Add location"}
-            </button>
-          </div>
         </div>
 
-        {!hero && (
-          <button type="button" className="btn btn-soft" onClick={() => setSheet("gallery")} style={{ width: "100%", marginTop: 16, height: 50, gap: 8, fontSize: 15 }}>
-            <Plus size={18} weight="bold" />Add photos or videos
+        <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+          <button type="button" className="nf" onClick={() => setSheet("date")} aria-label={`Date, ${dateName(when, now)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
+            <CalendarBlank size={20} aria-hidden />
+            <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{dateName(when, now)}</span>
+            <CaretDown size={16} color="var(--gray)" aria-hidden />
           </button>
-        )}
+          <button type="button" className="nf" onClick={() => setSheet("clock")} aria-label={`Time, ${timeName(when)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
+            <Clock size={20} aria-hidden />
+            <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{timeName(when)}</span>
+            <CaretDown size={16} color="var(--gray)" aria-hidden />
+          </button>
+        </div>
 
-        {/* what was entered, at a glance */}
-        <AnimatePresence initial={false}>
-          {stats.length > 0 && (
-            <motion.div key="stats" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, stats.length)}, 1fr)`, marginTop: 16, padding: "12px 4px", borderRadius: 16, background: "var(--bg)" }}>
-                {stats.slice(0, 3).map((s, i) => (
-                  <div key={s.label} style={{ padding: "0 12px", borderLeft: i ? "1px solid var(--line)" : 0 }}>
-                    <p className="meta" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12 }}><s.Icon size={14} aria-hidden />{s.label}</p>
-                    <p className="num" style={{ fontSize: 19, fontWeight: 650, marginTop: 4, whiteSpace: "nowrap" }}>{s.v}{s.u && <span style={{ fontSize: 13, fontWeight: 500, marginLeft: 3 }}>{s.u}</span>}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* the sport */}
-        <span className="flabel" style={{ marginTop: 22 }}>Activity</span>
-        <button type="button" className="nf" onClick={() => setSheet("act")} aria-label={`Activity, ${act.name}. Change`} style={{ width: "100%", height: 56, padding: "0 14px", gap: 12, cursor: "pointer" }}>
-          <SportIcon Icon={act.Icon} size={24} />
-          <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600 }}>{act.name}</span>
-          <CaretDown size={18} color="var(--gray)" aria-hidden />
-        </button>
-
-        {/* date and time, separate */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr", gap: 10, marginTop: 14 }}>
-          <div>
-            <span className="flabel">Date</span>
-            <button type="button" className="nf" onClick={() => setSheet("date")} aria-label={`Date, ${dateName(when, now)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
-              <CalendarBlank size={20} aria-hidden />
-              <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{dayShort(when, now)}</span>
-            </button>
-          </div>
-          <div>
-            <span className="flabel">Time</span>
-            <button type="button" className="nf" onClick={() => setSheet("clock")} aria-label={`Time, ${timeName(when)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
-              <Clock size={20} aria-hidden />
-              <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{timeName(when)}</span>
-            </button>
-          </div>
+        <div style={{ position: "relative", marginTop: 12 }}>
+          <MapPin size={18} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 17 }} />
+          <input ref={placeRef} className="input" value={placeName} onChange={(e) => setPlaceName(e.target.value)} placeholder="Location" aria-label="Location" maxLength={80} style={{ paddingLeft: 42 }} />
         </div>
 
         {/* metrics from the spec: pick a type, enter it in a sheet */}
@@ -632,10 +579,6 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
               </button>
             ))}
           </div>
-          {act.metrics.includes("performance") && (
-            <p className="note" style={{ fontSize: 13, marginTop: 12 }}><Trophy size={16} aria-hidden style={{ flex: "none" }} />Performance and pace are worked out from your distance and time.</p>
-          )}
-
           {head("Your metrics")}
           {added.length === 0 ? (
             <div style={{ display: "grid", placeItems: "center", gap: 8, padding: "20px 16px", borderRadius: 16, border: `1.5px dashed ${metricsErr ? "#fda29b" : "var(--line)"}`, textAlign: "center" }}>
@@ -658,13 +601,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
           {metricsErr && fieldErr(`Add your ${needsText} to save this ${act.name.toLowerCase()}`)}
         </section>
 
-        {head("Location", true)}
-        <div style={{ position: "relative" }}>
-          <MapPin size={18} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 17 }} />
-          <input ref={placeRef} className="input" value={placeName} onChange={(e) => setPlaceName(e.target.value)} placeholder="Type a place, like Marina Beach" aria-label="Location" maxLength={80} style={{ paddingLeft: 42 }} />
-        </div>
-
-        {head("How did you feel?", true)}
+        {head("How did you feel?")}
         <div role="radiogroup" aria-label="How did you feel" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
           {FEELS.map(([t, src]) => {
             const on = feel === t;
@@ -679,26 +616,23 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
           })}
         </div>
 
-        {head("Mark this day", true)}
+        {head("Mark this day")}
         {chips("Mark this day", MARKS, (o) => mark === o, (o) => setMark(mark === o ? null : o))}
 
-        {head("Tags", true)}
+        {head("Tags")}
         {chips("Tags", tagList.map((label) => ({ label })), (o) => tags.includes(o), (o) => setTags(tags.includes(o) ? tags.filter((x) => x !== o) : [...tags, o]),
           <AddChip label="Add tag" placeholder="New tag" onAdd={(t) => { if (!tagList.includes(t)) setTagList([...tagList, t]); if (!tags.includes(t)) setTags([...tags, t]); }} />)}
 
-        {head("Gear", true)}
+        {head("Gear")}
         {chips("Gear", gearList.map((label) => ({ label, Icon: Sneaker })), (o) => gear === o, (o) => setGear(gear === o ? null : o),
           <AddChip label="Add gear" placeholder="Gear name" onAdd={(g) => { setGearList((l) => (l.includes(g) ? l : [...l, g])); setGear(g); }} />)}
 
-        {head("With whom", true)}
+        {head("With whom")}
         {chips("With whom", WITH, (o) => withWhom === o, (o) => setWithWhom(withWhom === o ? null : o))}
 
-        {head("Link to goal", true)}
+        {head("Link to goal")}
         {chips("Link to goal", goals.map((g) => ({ label: g.title, Icon: Flag })), (o) => goalName === o, (o) => setLinked(goalName === o ? null : o))}
 
-        {head("Notes", true)}
-        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How did it go? Add a note for yourself." aria-label="Notes" rows={4}
-          style={{ height: "auto", padding: "13px 16px", lineHeight: 1.45, resize: "none", fontFamily: "inherit" }} />
       </div>
 
       <div style={{ position: "sticky", bottom: 0, zIndex: 5, padding: "14px 20px 28px", background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 30%)" }}>
@@ -726,13 +660,13 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         {sheet === "gallery" && <GallerySheet have={media.map((m) => m.src)} onAdd={addMedia} onClose={() => setSheet(null)} />}
         {sheet === "date" && <DateSheet value={when} now={now} onSave={setDate} onClose={() => setSheet(null)} />}
         {sheet === "clock" && <ClockSheet value={when} now={now} onSave={setWhen} onClose={() => setSheet(null)} />}
-        {sheet === "dist" && <DistanceSheet title="Distance" cta="Set distance" value={dist.v || 5} unit={dist.u} onSave={(v, u) => setDist({ v, u })} onClose={() => setSheet(null)} />}
-        {sheet === "time" && <TimeSheet title="Duration" cta="Set duration" fmt="hms" value={time} onSave={setTime} onClose={() => setSheet(null)} />}
+        {sheet === "dist" && <DistanceSheet title="Distance" cta="Set distance" value={dist.v || 5} unit={dist.u} onSave={(v, u) => setDist({ v, u })} onRemove={dist.v > 0 ? askToRemove("distance") : undefined} onClose={() => setSheet(null)} />}
+        {sheet === "time" && <TimeSheet title="Duration" cta="Set duration" fmt="hms" value={time} onSave={setTime} onRemove={time > 0 ? askToRemove("duration") : undefined} onClose={() => setSheet(null)} />}
         {numKey && NUM[numKey] && (
           <NumberSheet key={numKey} title={NUM[numKey].title} label={NUM[numKey].label} suffix={NUM[numKey].suffix} decimals={NUM[numKey].decimals} units={NUM[numKey].units} unit={numKey === "weight" ? weightU : undefined}
-            value={num(numKey)} onSave={(v, u) => { setNum(numKey)(v); if (numKey === "weight" && u) setWeightU(u); }} onRemove={clearFor(numKey)} onClose={() => setSheet(null)} />
+            value={num(numKey)} onSave={(v, u) => { setNum(numKey)(v); if (numKey === "weight" && u) setWeightU(u); }} onRemove={askToRemove(numKey)} onClose={() => setSheet(null)} />
         )}
-        {sheet === "intervals" && <IntervalsSheet value={intervals} onSave={setIntervals} onClose={() => setSheet(null)} />}
+        {sheet === "intervals" && <IntervalsSheet value={intervals} onSave={setIntervals} onRemove={askToRemove("intervals")} onClose={() => setSheet(null)} />}
         {sheet === "more" && (
           <Sheet id="more" title="More metrics" sub="Optional. They don't count toward a goal." onClose={() => setSheet(null)}>
             <div style={{ marginTop: 10 }}>
@@ -755,6 +689,39 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         )}
         {actionsFor && (
           <MediaActions isHighlight={actionsFor === highlight} onHighlight={() => makeHighlight(actionsFor)} onDelete={() => removeMedia(actionsFor)} onClose={() => setActionsFor(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* removing a metric: confirm in the centre, then a short Undo */}
+      <AnimatePresence>
+        {askRemove && (
+          <motion.div key="ask-remove" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
+            style={{ position: "absolute", inset: 0, zIndex: 40, display: "grid", placeItems: "center", padding: 24, background: "rgba(11,18,32,0.42)" }} onClick={() => setAskRemove(null)}>
+            <motion.div role="alertdialog" aria-modal="true" aria-labelledby="rm-t" aria-describedby="rm-d" onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === "Escape") setAskRemove(null); }}
+              initial={{ scale: 0.94, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96 }} transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              style={{ width: "100%", borderRadius: 24, background: "#fff", padding: "22px 20px 16px", boxShadow: "0 30px 60px -20px rgba(11,18,32,0.5)", textAlign: "center" }}>
+              <span aria-hidden style={{ width: 52, height: 52, borderRadius: "50%", background: "#FEF3F2", color: "#d92d20", display: "grid", placeItems: "center", margin: "0 auto 12px" }}><Trash size={24} /></span>
+              <h2 id="rm-t" className="h2" style={{ fontSize: 19 }}>Remove {labelOf(askRemove).toLowerCase()}?</h2>
+              <p id="rm-d" className="meta" style={{ fontSize: 14, lineHeight: 1.5, marginTop: 8 }}>
+                This clears the <strong className="num" style={{ color: "var(--ink)" }}>{valueOf(askRemove)}</strong> you added.{(entries as string[]).includes(askRemove) && entries.filter((e) => has[e]).length === 1 ? ` It's your only goal metric, so this ${act.name.toLowerCase()} won't count toward a goal until you add one.` : ""}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 18 }}>
+                <button type="button" className="btn btn-soft" autoFocus onClick={() => setAskRemove(null)}>Keep it</button>
+                <button type="button" className="btn" style={{ background: "#d92d20", color: "#fff" }} onClick={() => doRemove(askRemove)}>Remove</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {undo && (
+          <motion.div key="undo" role="status" aria-live="polite" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.22 }}
+            style={{ position: "absolute", left: 20, right: 20, bottom: 104, zIndex: 35, display: "flex", alignItems: "center", gap: 12, padding: "12px 12px 12px 16px", borderRadius: 16, background: "var(--ink)", color: "#fff", boxShadow: "0 18px 36px -16px rgba(11,18,32,0.5)" }}>
+            <Check size={18} weight="bold" aria-hidden />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{undo.label}</span>
+            <button type="button" onClick={() => { undo.restore(); setUndo(null); window.clearTimeout(undoTimer.current); }} style={{ fontSize: 14, fontWeight: 650, color: "#8DB4FF", padding: "6px 8px" }}>Undo</button>
+          </motion.div>
         )}
       </AnimatePresence>
 

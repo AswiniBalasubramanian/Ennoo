@@ -263,11 +263,6 @@ blockquote {
 }
 .chip-glass strong { color: #fff; }
 
-/* Endless drifting watermark: the shape repeats once across 200% width, so sliding by half loops seamlessly */
-.ridge-loop { animation: ridge-loop 30s linear infinite; will-change: transform; }
-@keyframes ridge-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .ridge-loop { animation: none; } }
-
 /* Inline button spinner */
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

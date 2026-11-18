@@ -486,7 +486,7 @@ const DIST_UNITS = ["km", "mi", "m"] as const;
 const TO_M = { km: 1000, mi: 1609.344, m: 1 };
 const wholesFor = (u: string) => (u === "m" ? Array.from({ length: 500 }, (_, i) => (i + 1) * 100) : Array.from({ length: 5000 }, (_, i) => i + 1));
 const presetsFor = (u: string) => (u === "m" ? [1000, 5000, 10000, 21100, 42200] : [50, 100, 250, 500, 1000]);
-export function DistanceSheet({ value, unit, onSave, onClose, title = "Target distance", cta = "Set distance" }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; title?: string; cta?: string }) {
+export function DistanceSheet({ value, unit, onSave, onClose, onRemove, title = "Target distance", cta = "Set distance" }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; onRemove?: () => void; title?: string; cta?: string }) {
   const place = (v: number, u: string) => {
     const ws = wholesFor(u);
     if (u === "m") { const i = Math.max(0, Math.min(ws.length - 1, Math.round(v / 100) - 1)); return { w: i, d: 0 }; }
@@ -544,7 +544,7 @@ export function DistanceSheet({ value, unit, onSave, onClose, title = "Target di
         {out.v > 0 && !cOver && <><strong className="num" style={{ color: "var(--ink)", letterSpacing: 0 }}>{fmtN(out.v)} {out.u}</strong>
         {out.u !== "km" && <> · about {fmtN(Math.round((out.v * TO_M[out.u as "km"]) / 100) / 10)} km</>}</>}
       </p>
-      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <SheetFooter cta={cta} onSave={save} onRemove={onRemove} />
     </Sheet>
   );
 }
@@ -685,7 +685,16 @@ function timePresets(fmt: "hms" | "sec", base: number) {
   const snap = (t: number) => (fmt === "hms" ? (base < 600 ? Math.max(5, Math.round(t / 5) * 5) : Math.max(60, Math.round(t / 60) * 60)) : Math.max(0.5, Math.round(t * 2) / 2));
   return [...new Set([0.85, 0.9, 1, 1.1, 1.2].map((f) => snap(base * f)))];
 }
-export function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void }) {
+/* Save, plus a Remove that hands off to the caller (it confirms in a centred pop-up) */
+export function SheetFooter({ cta, onSave, onRemove, disabled }: { cta: string; onSave: () => void; onRemove?: () => void; disabled?: boolean }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: onRemove ? "1fr 2fr" : "1fr", gap: 8, marginTop: 14 }}>
+      {onRemove && <button type="button" className="btn btn-soft" style={{ color: "#d92d20" }} onClick={onRemove}>Remove</button>}
+      <button type="button" className="btn btn-blue" disabled={disabled} onClick={onSave}>{cta}</button>
+    </div>
+  );
+}
+export function TimeSheet({ title, cta, fmt, value, onSave, onClose, onRemove }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void; onRemove?: () => void }) {
   const cols = TIME_COLS[fmt];
   const split = (t: number) => fmt === "hms"
     ? [Math.min(23, Math.floor(t / 3600)), Math.floor((t % 3600) / 60), Math.round(t % 60) % 60]
@@ -726,7 +735,7 @@ export function TimeSheet({ title, cta, fmt, value, onSave, onClose }: { title: 
         </div>
       )}
       {readout(!bad ? fmtTime(total) : null, tried && (over.some(Boolean) ? "Check the highlighted field" : "Pick a time above 0"))}
-      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <SheetFooter cta={cta} onSave={save} onRemove={onRemove} />
     </Sheet>
   );
 }
