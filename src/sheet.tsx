@@ -37,7 +37,7 @@ export function Sheet({ id, title, sub, onClose, children, expandable, head }: {
   );
   return (
     <motion.div key={id} initial={{ opacity: 1 }} exit={{ opacity: 1 }} transition={{ duration: 0.3 }}
-      style={{ position: "absolute", inset: 0, zIndex: 30, display: "flex", alignItems: "flex-end", paddingBottom: kb, transition: "padding-bottom .25s var(--ease)" }}>
+      style={{ position: "absolute", inset: 0, zIndex: 32, display: "flex", alignItems: "flex-end", paddingBottom: kb, transition: "padding-bottom .25s var(--ease)" }}>
       <motion.div aria-hidden onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
         style={{ position: "absolute", inset: 0, background: "rgba(11,18,32,0.42)" }} />
       <motion.div role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}

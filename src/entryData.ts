@@ -85,8 +85,6 @@ export const TAGS: Record<string, string[]> = {
   skipping: t("Easy, Intervals, Speed Work, Endurance, Workout, Challenge, Time Trial, Recovery"),
 };
 export const tagsFor = (id: string) => TAGS[id] ?? ["Workout", "Recovery"];
-/* how many saved activities carry each tag (for search filters); a prototype sample */
-export const TAG_COUNTS: Record<string, number> = { Easy: 42, Long: 18, Tempo: 9, Intervals: 14, Recovery: 21, Race: 6, Road: 33, Track: 11, Workout: 12, "Time Trial": 4, Commute: 7, "For a Cause": 2, Uphill: 5 };
 
 /* ---------- Gear: shoes for runs, bikes for rides; replace reminders by distance ---------- */
 export type GearKind = "shoe" | "bike" | "watch" | "bag" | "helmet" | "equipment" | "other";

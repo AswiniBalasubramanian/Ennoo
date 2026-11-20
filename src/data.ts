@@ -144,15 +144,15 @@ export const otherGoals = [
 
 export type Entry = {
   id: string; activity: string; title: string; when: string; day: string;
-  distance?: string; duration: string; pace?: string; place: string; note: string; feel: number; photo?: string; pb?: string;
+  distance?: string; duration: string; pace?: string; place: string; note: string; feel: number; photo?: string; pb?: string; tags?: string[];
 };
 
 export const entries: Entry[] = [
-  { id: "a1", activity: "run", title: "Adyar river tempo", when: "Today, 6:12 AM", day: "Today", distance: "8.42 km", duration: "44:07", pace: "5:14 /km", place: "Adyar river loop", note: "Legs felt heavy for the first two km, then everything clicked by the bridge.", feel: 7, photo: img.dawnRoad, pb: "Fastest 5K this year" },
-  { id: "a2", activity: "yoga", title: "Evening flow", when: "Yesterday, 7:30 PM", day: "Yesterday", duration: "45:00", place: "Home", note: "", feel: 3 },
-  { id: "a3", activity: "cycle", title: "ECR coffee ride", when: "Sun, 5:40 AM", day: "Sunday", distance: "52.6 km", duration: "1:48:22", pace: "29.1 km/h", place: "East Coast Road", note: "Headwind all the way to Kovalam. Worth it for the filter coffee.", feel: 6, photo: img.ride },
-  { id: "a4", activity: "swim", title: "Sea swim", when: "Sat, 6:30 AM", day: "Saturday", distance: "1.80 km", duration: "38:51", pace: "2:09 /100 m", place: "Elliot's Beach", note: "Calm water. Sighted off the lighthouse and swam straight for once.", feel: 5, photo: img.swim },
-  { id: "a5", activity: "stairs", title: "Office stairs", when: "Fri, 1:10 PM", day: "Friday", duration: "18:30", place: "Tidel Park", note: "12 floors, twice. Lunch break well spent.", feel: 6 },
+  { id: "a1", activity: "run", title: "Adyar river tempo", when: "Today, 6:12 AM", day: "Today", distance: "8.42 km", duration: "44:07", pace: "5:14 /km", place: "Adyar river loop", note: "Legs felt heavy for the first two km, then everything clicked by the bridge.", feel: 7, photo: img.dawnRoad, pb: "Fastest 5K this year", tags: ["Road", "Tempo", "Workout"] },
+  { id: "a2", activity: "yoga", title: "Evening flow", when: "Yesterday, 7:30 PM", day: "Yesterday", duration: "45:00", place: "Home", note: "", feel: 3, tags: ["Recovery", "Flexibility", "Easy"] },
+  { id: "a3", activity: "cycle", title: "ECR coffee ride", when: "Sun, 5:40 AM", day: "Sunday", distance: "52.6 km", duration: "1:48:22", pace: "29.1 km/h", place: "East Coast Road", note: "Headwind all the way to Kovalam. Worth it for the filter coffee.", feel: 6, photo: img.ride, tags: ["Road", "Long", "Endurance", "Easy"] },
+  { id: "a4", activity: "swim", title: "Sea swim", when: "Sat, 6:30 AM", day: "Saturday", distance: "1.80 km", duration: "38:51", pace: "2:09 /100 m", place: "Elliot's Beach", note: "Calm water. Sighted off the lighthouse and swam straight for once.", feel: 5, photo: img.swim, tags: ["Open Water", "Long", "Endurance"] },
+  { id: "a5", activity: "stairs", title: "Office stairs", when: "Fri, 1:10 PM", day: "Friday", duration: "18:30", place: "Tidel Park", note: "12 floors, twice. Lunch break well spent.", feel: 6, tags: ["Intervals", "Workout"] },
 ];
 
 // Sun..Sat, 18..24 Oct. Today is Wednesday 21.
