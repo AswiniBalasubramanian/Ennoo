@@ -31,7 +31,7 @@ export function DetailRow({ Icon, label, value, placeholder, onClick, lead }: { 
   return (
     <button type="button" onClick={onClick} aria-label={`${label}${typeof value === "string" && value ? `, ${value}` : ""}. Change`}
       style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 56, padding: "8px 14px", borderRadius: 16, border: "1px solid var(--line)", background: "#fff", textAlign: "left" }}>
-      {lead ?? (Icon && <Icon size={22} aria-hidden />)}
+      {lead ?? (Icon && <SportIcon Icon={Icon} size={22} neutral />)}
       <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: value ? 600 : 500, color: value ? "var(--ink)" : "var(--gray)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {value || placeholder || label}
       </span>

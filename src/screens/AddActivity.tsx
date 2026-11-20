@@ -492,12 +492,12 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
 
         <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
           <button type="button" className="nf" onClick={() => setSheet("date")} aria-label={`Date, ${dateName(when, now)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
-            <CalendarBlank size={20} aria-hidden />
+            <SportIcon Icon={CalendarBlank} size={22} neutral />
             <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{dateName(when, now)}</span>
             <CaretDown size={16} color="var(--gray)" aria-hidden />
           </button>
           <button type="button" className="nf" onClick={() => setSheet("clock")} aria-label={`Time, ${timeName(when)}. Change`} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
-            <Clock size={20} aria-hidden />
+            <SportIcon Icon={Clock} size={22} neutral />
             <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>{timeName(when)}</span>
             <CaretDown size={16} color="var(--gray)" aria-hidden />
           </button>
@@ -505,7 +505,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
 
         <div style={{ position: "relative", marginTop: 12 }}>
           <button type="button" className="nf" onClick={() => setSheet("loc")} aria-label={place ? `Location, ${place.name}. Change` : "Add a location"} style={{ width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" }}>
-            <MapPin size={20} weight={place ? "fill" : "regular"} color={place ? "var(--blue)" : "var(--gray)"} aria-hidden />
+            <SportIcon Icon={MapPin} size={22} neutral />
             <span style={{ flex: 1, minWidth: 0, textAlign: "left", fontSize: 15, fontWeight: place ? 600 : 400, color: place ? "var(--ink)" : "var(--gray)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {place ? <>{place.name}{place.area && <span style={{ fontWeight: 400, color: "var(--gray)" }}> · {place.area}</span>}</> : "Location"}
             </span>
