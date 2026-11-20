@@ -188,8 +188,6 @@ export function NumField({ id, label, optional, value, onChange, decimals, suffi
   );
 }
 
-type TimeFmt = "hms" | "sec";
-
 function Seg<T extends string>({ label, options, value, onChange }: { label: string; options: [T, string][]; value: T; onChange: (v: T) => void }) {
   return (
     <div className="seg" role="radiogroup" aria-label={label}>
@@ -221,7 +219,7 @@ const SkeletonRow = () => (
    near you are sorted by how far away they are and the search box looks around you; with it off, only saved
    places show. One tap to pick (tap again to clear), or add a new one inline. */
 export function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, loc, onAskLoc }: {
-  noun: "rep" | "lap"; places: Place[]; selected?: string; onSelect: (p: Place | null) => void; onAdd: (p: Place) => void; onNew: () => void; loc: LocState; onAskLoc: () => void;
+  noun: "rep" | "lap" | "place"; places: Place[]; selected?: string; onSelect: (p: Place | null) => void; onAdd: (p: Place) => void; onNew: () => void; loc: LocState; onAskLoc: () => void;
 }) {
   const [q, setQ] = useState("");
   const [searching, setSearching] = useState(false);
@@ -252,7 +250,7 @@ export function PlacePicker({ noun, places, selected, onSelect, onAdd, onNew, lo
   const head = (t: string) => <p className="cap" style={{ fontSize: 12, fontWeight: 600, margin: "6px 2px 0", color: "var(--gray)" }}>{t}</p>;
   return (
     <div>
-      <span className="flabel">{noun === "lap" ? "Find a track" : "Find a location"}</span>
+      {noun !== "place" && <span className="flabel">{noun === "lap" ? "Find a track" : "Find a location"}</span>}
       <div style={{ position: "relative" }}>
         <MagnifyingGlass size={17} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 15 }} />
         <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={gps ? "Search places near you" : "Search saved places"} aria-label={gps ? "Search places near you" : "Search saved places"}
@@ -359,7 +357,7 @@ function MapArt() {
 
 /* Add a place: drag the map under a fixed pin (or tap a place on it). The pin snaps to a known place and
    fills its name and length; anywhere else it names the spot by its area and suggests a length for the type. */
-export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "lap"; seed?: string; gps: boolean; onSave: (p: Place) => void; onClose: () => void }) {
+export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep" | "lap" | "place"; seed?: string; gps: boolean; onSave: (p: Place) => void; onClose: () => void }) {
   const VH = 230;
   const box = useRef<HTMLDivElement>(null);
   const [vw, setVw] = useState(334);
@@ -379,7 +377,7 @@ export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep
       setDraft({ name: near.p.name, dist: near.p.dist, unit: near.p.unit, type: near.p.type });
     } else {
       setFound(null);
-      setDraft((d) => ({ ...d, name: `${d.type} in ${areaAt(cx, cy)}`, ...typeLen[d.type] }));
+      setDraft((d) => ({ ...d, name: noun === "place" ? `${areaAt(cx, cy)}, Chennai` : `${d.type} in ${areaAt(cx, cy)}`, ...typeLen[d.type] }));
     }
   };
   const panTo = (px: number, py: number) => {
@@ -440,7 +438,7 @@ export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{found ? found.name : `Pinned spot in ${areaAt(at.x, at.y)}`}</span>
           <span className="cap num" style={{ letterSpacing: 0 }}>
-            {found ? `${placeLine(found)} found on the map` : "Suggested length, change it if you know it"}{gps && ` · ${away < 0.1 ? "Here" : awayText(away)}`}
+            {found ? `${placeLine(found)} found on the map` : noun === "place" ? "Name it the way you know it" : "Suggested length, change it if you know it"}{gps && ` · ${away < 0.1 ? "Here" : awayText(away)}`}
           </span>
         </span>
       </div>
@@ -452,8 +450,8 @@ export function AddPlaceSheet({ noun, seed, gps, onSave, onClose }: { noun: "rep
             placeholder={noun === "lap" ? "Such as City Stadium track" : "Such as Temple hill"} aria-invalid={tried && !draft.name.trim()} style={{ height: 50 }} />
           {fieldErr(tried && !draft.name.trim() ? "Give the place a name" : undefined)}
         </div>
-        <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} optional value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
-          units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} />
+        {noun !== "place" && <NumField id="pl-dist" label={noun === "lap" ? "Lap length" : "Length of one rep"} optional value={draft.dist} decimals onChange={(v) => setDraft({ ...draft, dist: v })}
+          units={["m", "km", "mi"]} unit={draft.unit} onUnit={(u) => setDraft({ ...draft, unit: u })} />}
         <button type="button" className="btn btn-blue" style={{ width: "100%" }} onClick={save}>Save place</button>
       </div>
     </Sheet>
@@ -611,9 +609,9 @@ export function DurationSheet({ value, onSave, onClose, title, cta }: { value: n
 }
 
 /* Any count or measure on wheels: whole numbers by step, optional tenths, and an optional unit wheel that converts */
-type UnitDef = { name: string; f: number }; // f: size of one unit in the base unit
-function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, tenths, presets, onSave, onClose }: {
-  title: string; cta: string; value: number; unit: string; units?: UnitDef[]; min?: number; max: number; step?: number; tenths?: boolean;
+export type UnitDef = { name: string; f: number }; // f: size of one unit in the base unit
+export function NumberSheet({ title, sub = "Scroll to set it, tap a preset, or type your own.", cta, value, unit, units, min = 1, max, step = 1, tenths, presets, onSave, onClose, onRemove }: {
+  title: string; sub?: string; cta: string; onRemove?: () => void; value: number; unit: string; units?: UnitDef[]; min?: number; max: number; step?: number; tenths?: boolean;
   presets: number[]; onSave: (v: number, unit: string) => void; onClose: () => void;
 }) {
   const wholes = useMemo(() => Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, i) => min + i * step), [min, max, step]);
@@ -643,7 +641,7 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
   const ph = `${fmtN(lo)}–${fmtN(hi)}`;
   const save = () => { if (!(v > 0) || out) return setTried(true); onSave(tenths ? Math.round(v * 10) / 10 : Math.round(v), u); onClose(); };
   return (
-    <Sheet id="num" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
+    <Sheet id="num" title={title} sub={sub} onClose={onClose}>
       <PresetChips custom={custom} onCustom={() => { setCustom(true); setCv(0); setTried(false); focusSoon("num-custom"); }}
         presets={presets.map((x) => ({ label: fmtN(x) + " " + u, on: v === x, pick: () => { setCustom(false); setPos(place(x)); } }))} />
       {custom ? (
@@ -668,16 +666,16 @@ function NumberSheet({ title, cta, value, unit, units, min = 1, max, step = 1, t
         </div>
       )}
       {readout(v > 0 && !out ? fmtN(v) + " " + u : null, tried && !out && "Enter a number above 0")}
-      <button type="button" className="btn btn-blue" style={{ width: "100%", marginTop: 14 }} onClick={save}>{cta}</button>
+      <SheetFooter cta={cta} onSave={save} onRemove={onRemove} />
     </Sheet>
   );
 }
 
-/* A time on wheels: h : min : s for longer efforts, or seconds . hundredths for sprints */
+/* A time on wheels: h : min : s for longer efforts, or min : s . hundredths (00–99) for precise, short ones */
 const R60 = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 const TIME_COLS = {
   hms: [{ label: "Hours", items: Array.from({ length: 24 }, (_, i) => String(i)), sep: "h" }, { label: "Minutes", items: R60, sep: "min" }, { label: "Seconds", items: R60, sep: "s" }],
-  sec: [{ label: "Seconds", items: Array.from({ length: 600 }, (_, i) => String(i)), sep: "." }, { label: "Hundredths", items: Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0")), sep: "s" }],
+  sec: [{ label: "Minutes", items: R60, sep: ":" }, { label: "Seconds", items: R60, sep: "." }, { label: "Hundredths", items: Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0")), sep: "" }],
 };
 /* preset times around the starting value: a little faster and slower, rounded to whole minutes (or half seconds for sprints) */
 function timePresets(fmt: "hms" | "sec", base: number) {
@@ -698,21 +696,21 @@ export function TimeSheet({ title, cta, fmt, value, onSave, onClose, onRemove }:
   const cols = TIME_COLS[fmt];
   const split = (t: number) => fmt === "hms"
     ? [Math.min(23, Math.floor(t / 3600)), Math.floor((t % 3600) / 60), Math.round(t % 60) % 60]
-    : [Math.min(599, Math.floor(t)), Math.round((t % 1) * 100) % 100];
+    : [Math.min(59, Math.floor(t / 60)), Math.floor(t % 60), Math.round((t % 1) * 100) % 100];
   const start = value > 0 ? value : fmt === "hms" ? 1800 : 60;
   const [presets] = useState(() => timePresets(fmt, start));
   const [idx, setIdx] = useState(() => split(start));
   const [custom, setCustom] = useState(false);
   const [cv, setCv] = useState<number[]>(() => cols.map(() => 0));
-  const sum = (p: number[]) => (fmt === "hms" ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] + p[1] / 100);
+  const sum = (p: number[]) => (fmt === "hms" ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1] + p[2] / 100);
   const total = sum(custom ? cv : idx);
   // the limit for each typed part: hours up to 23, minutes and seconds up to 59, hundredths up to 99
-  const caps = fmt === "hms" ? [23, 59, 59] : [599, 99];
+  const caps = fmt === "hms" ? [23, 59, 59] : [59, 59, 99];
   const over = custom ? cv.map((x, k) => (x > caps[k] ? `Up to ${caps[k]}` : undefined)) : [];
   const bad = !(total > 0) || over.some(Boolean);
   const [tried, setTried] = useState(false);
   const save = () => { if (bad) return setTried(true); onSave(Math.round(total * 100) / 100); onClose(); };
-  const suffix = fmt === "hms" ? ["h", "min", "s"] : ["s", "hs"];
+  const suffix = fmt === "hms" ? ["h", "min", "s"] : ["min", "s", "1/100"];
   return (
     <Sheet id="time" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
       <PresetChips custom={custom} onCustom={() => { setCustom(true); setCv(cols.map(() => 0)); setTried(false); focusSoon("time-0"); }}
@@ -825,9 +823,6 @@ const DAY = 86400000;
 const fmtDate = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const addDays = (n: number) => new Date(TODAY.getTime() + n * DAY);
 const daysUntil = (d: Date) => Math.max(1, Math.round((d.getTime() - TODAY.getTime()) / DAY));
-const meters = (d: number, u?: string) => (u === "km" ? d * 1000 : u === "mi" ? d * 1609.344 : d);
-// sprints read best as 52.35 s, longer efforts as 20:30
-const autoFmt = (d: number, u?: string): TimeFmt => (meters(d, u) <= 400 ? "sec" : "hms");
 
 /* The verb people use for the sport, so the goal reads "Run 100 km", "Ride 40 km in 1:30:00" */
 function verbOf(a: Activity) {
@@ -906,7 +901,7 @@ function planLine(a: Activity, g: Goal, days: number) {
   return `About ${fmtN(Math.round(perWeek))} ${g.unit} a week.`;
 }
 /* The distance icon follows the sport: a path on foot, a map for rides, waves on water, slopes on snow, a ruler for the rest */
-const distIcon = (a: Activity) => (a.group === "Foot" ? Path : a.group === "Cycling" ? MapTrifold : a.group === "Water" ? Waves : a.group === "Snow" ? Mountains : Ruler);
+export const distIcon = (a: Activity) => (a.group === "Foot" ? Path : a.group === "Cycling" ? MapTrifold : a.group === "Water" ? Waves : a.group === "Snow" ? Mountains : Ruler);
 const metricIcon = (m: Metric, a: Activity) => (m === "distance" ? distIcon(a) : METRICS[m].Icon);
 // one line on what each metric measures, in this activity's words
 const tileAbout = (m: Metric, a: Activity) => ({
@@ -941,7 +936,6 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const [loc, setLoc] = useState<LocState>("unknown");
   const [askingLoc, setAskingLoc] = useState(false);
   const allowLoc = () => { setAskingLoc(false); setLoc("locating"); setTimeout(() => setLoc("on"), 1400); };
-  const [fmtPicked, setFmtPicked] = useState(false);
   const [tried, setTried] = useState(false);
   // the title band is pinned on its own; search + filters pin directly beneath it, so measure it
   const titleRef = useRef<HTMLDivElement>(null);
@@ -967,11 +961,11 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
   const sections = groupOrder.map((g) => ({ g, items: list.filter((a) => a.group === g) })).filter((s) => s.items.length);
 
   const reset = (a: Activity, metric: Metric) => {
-    const dg = defaultGoal(a, metric); setGoal(dg); setRefTab("dist"); setRefDist(dg.ref?.kind === "dist" ? { value: dg.ref.value, unit: dg.ref.unit } : { value: 400, unit: "m" }); setFmtPicked(false); setTried(false);
+    const dg = defaultGoal(a, metric); setGoal(dg); setRefTab("dist"); setRefDist(dg.ref?.kind === "dist" ? { value: dg.ref.value, unit: dg.ref.unit } : { value: 400, unit: "m" }); setTried(false);
   };
   const pick = (id: string) => { if (id !== activity) { setActivity(id); reset(byId(id), byId(id).metrics[0]); } };
   const pickMetric = (x: Metric) => { if (x !== m) reset(act, x); };
-  const setPerfDist = (d: number, u: DistUnit) => set({ perfDist: d, perfUnit: u, ...(!fmtPicked && d > 0 && { timeFmt: autoFmt(d, u) }) });
+  const setPerfDist = (d: number, u: DistUnit) => set({ perfDist: d, perfUnit: u });
 
   // what still needs fixing before the review
   const problems: Partial<Record<"target" | "current" | "dist" | "time" | "best", string>> = {};
@@ -1226,8 +1220,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   {m === "performance" && (<>
                     <SheetField label="Distance" Icon={distIcon(act)} value={(goal.perfDist ?? 0) > 0 ? fmtN(goal.perfDist ?? 0) : null} unit={goal.perfUnit} empty="Set a distance" onOpen={() => setPicking("pdist")} error={shown("dist")} />
                     <div>
-                      <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "Seconds (s.ss)"]]} value={goal.timeFmt ?? "hms"} onChange={(f) => { setFmtPicked(true); set({ timeFmt: f }); }} />
-                      <p className="cap" style={{ marginTop: 6, lineHeight: 1.4 }}>Seconds suit short sprints (100 m, 400 m). H : M : S suits longer efforts (5 km, a marathon).</p>
+                      <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "M : S . ss"]]} value={goal.timeFmt ?? "hms"} onChange={(f) => set({ timeFmt: f })} />
+                      <p className="cap" style={{ marginTop: 6, lineHeight: 1.4 }}>Pick either for any distance. M : S . ss adds hundredths (00–99), like 0:12.50 for 100 m or 1:42.38 for 800 m.</p>
                     </div>
                     <SheetField label="Target time" Icon={Timer} value={goal.target > 0 ? fmtTime(goal.target) : null} empty="Set a time" onOpen={() => setPicking("ptime")} error={shown("time")} />
                     <SheetField label="Current best" optional Icon={Trophy} value={(goal.best ?? 0) > 0 ? fmtTime(goal.best ?? 0) : null} empty="Add your best" onOpen={() => setPicking("pbest")} onClear={() => set({ best: 0 })} error={shown("best")} />

@@ -29,7 +29,7 @@ export type Goal = {
   perfDist?: number; perfUnit?: DistUnit;   // Performance: the distance the time is set over
   ref?: Ref;                                 // Reps and Laps
   best?: number;                             // Performance: current best in seconds, optional
-  timeFmt?: "hms" | "sec";                   // Performance: h:min:s, or seconds with hundredths for sprints
+  timeFmt?: "hms" | "sec";                   // Performance: h:min:s, or min:s.hundredths; the person picks, the distance never switches it
 };
 
 export const cumulative = (m: Metric) => m !== "performance" && m !== "weight";
