@@ -2,14 +2,14 @@
 // Built from the same parts as Add activity and onboarding: a label above each 52px field, pickers that open sheets.
 import { useRef, useState } from "react";
 import {
-  Sneaker, Bicycle, Watch, Backpack, HardHat, Goggles, DotsThree, PersonSimpleRun, Bell, ImageSquare, Check, CaretRight, CaretDown, MagnifyingGlass,
+  Sneaker, Bicycle, Watch, Backpack, HardHat, Goggles, DotsThree, PersonSimpleRun, Bell, ImageSquare, Check, CaretRight, CaretDown, MagnifyingGlass, Tag, Plus,
 } from "@phosphor-icons/react";
 import { Sheet } from "../sheet";
 import { SportIcon } from "../components";
 import { activities } from "../data";
 import type { Gear, GearKind } from "../entryData";
 import { Page } from "./entryParts";
-import { NumField } from "./Onboarding";
+import { NumberSheet } from "./Onboarding";
 
 export const GEAR_TYPES: { kind: GearKind; name: string; hint: string; Icon: typeof Sneaker }[] = [
   { kind: "shoe", name: "Shoes", hint: "Running, trail, walking, hiking shoes", Icon: Sneaker },
@@ -27,14 +27,49 @@ const DEFAULT_LIMIT: Partial<Record<GearKind, number>> = { shoe: 700, bike: 5000
 const DEFAULT_USES: Partial<Record<GearKind, string[]>> = { shoe: ["run", "walk"], bike: ["cycle"] };
 const TOP = ["run", "walk", "trail", "hike", "workout", "weights", "cycle", "swim"];
 
-const head = (t: string, opt?: boolean) => (
-  <h2 className="h2" style={{ fontSize: 18, margin: "28px 0 12px" }}>{t}{opt && <span className="meta" style={{ fontSize: 14, fontWeight: 500 }}> optional</span>}</h2>
-);
+const head = (t: string) => <h2 className="h2" style={{ fontSize: 18, margin: "28px 0 12px" }}>{t}</h2>;
 const picker: React.CSSProperties = { width: "100%", height: 52, padding: "0 12px", gap: 10, cursor: "pointer" };
+
+/* Shoe brands: a fixed list keeps spellings the same, so search and per-shoe counts stay clean.
+   Ten worldwide and ten Indian brands; anything else is typed in as a custom brand. */
+type Brand = { name: string; mark: string; color: string; logo?: string };
+export const SHOE_BRANDS: { group: string; list: Brand[] }[] = [
+  { group: "Popular worldwide", list: [
+    { name: "Adidas", mark: "A", color: "#111827", logo: "/img/brands/adidas.svg" }, { name: "ASICS", mark: "A", color: "#1E3A8A", logo: "/img/brands/asics.png" }, { name: "Brooks", mark: "B", color: "#1D4ED8", logo: "/img/brands/brooks.png" },
+    { name: "HOKA", mark: "H", color: "#1E40AF", logo: "/img/brands/hoka.png" }, { name: "New Balance", mark: "NB", color: "#B91C1C", logo: "/img/brands/newbalance.svg" }, { name: "Nike", mark: "N", color: "#111827", logo: "/img/brands/nike.png" },
+    { name: "On", mark: "On", color: "#374151", logo: "/img/brands/on.svg" }, { name: "PUMA", mark: "P", color: "#111827", logo: "/img/brands/puma.png" }, { name: "Saucony", mark: "S", color: "#C2410C", logo: "/img/brands/saucony.png" },
+    { name: "Skechers", mark: "S", color: "#1D4ED8", logo: "/img/brands/skechers.png" },
+  ] },
+  { group: "Popular in India", list: [
+    { name: "Action", mark: "A", color: "#B91C1C" }, { name: "Asian", mark: "A", color: "#C2410C", logo: "/img/brands/asian.png" }, { name: "Bata Power", mark: "B", color: "#B91C1C", logo: "/img/brands/bata.png" },
+    { name: "Campus", mark: "C", color: "#111827", logo: "/img/brands/campus.png" }, { name: "Lancer", mark: "L", color: "#1D4ED8" }, { name: "Liberty", mark: "L", color: "#1E3A8A", logo: "/img/brands/liberty.png" },
+    { name: "Neeman's", mark: "N", color: "#4D7C0F", logo: "/img/brands/neemans.png" }, { name: "Red Tape", mark: "R", color: "#B91C1C", logo: "/img/brands/redtape.png" }, { name: "Sparx", mark: "S", color: "#C2410C" },
+    { name: "Woodland", mark: "W", color: "#3F6212" },
+  ] },
+];
+const brandOf = (name: string) => SHOE_BRANDS.flatMap((g) => g.list).find((b) => b.name === name);
+function BrandMark({ name }: { name: string }) {
+  const b = brandOf(name);
+  const [broken, setBroken] = useState(false);
+  if (b?.logo && !broken) return (
+    <span aria-hidden style={{ width: 36, height: 36, borderRadius: 10, flex: "none", display: "grid", placeItems: "center", background: "#fff", border: "1px solid var(--line)", overflow: "hidden" }}>
+      <img src={b.logo} alt="" width={26} height={26} onError={() => setBroken(true)} style={{ width: 26, height: 26, objectFit: "contain" }} />
+    </span>
+  );
+  return (
+    <span aria-hidden style={{ width: 36, height: 36, borderRadius: 10, flex: "none", display: "grid", placeItems: "center", background: b ? `${b.color}14` : "var(--bg)", color: b?.color ?? "var(--gray)", fontSize: (b?.mark.length ?? 1) > 1 ? 12 : 15, fontWeight: 800, letterSpacing: "-0.02em" }}>
+      {b?.mark ?? name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+// what a replace reminder usually looks like, shown under the field
+const REPLACE_HINT: Partial<Record<GearKind, string>> = {
+  shoe: "Running shoes are usually replaced after 500–800 km.",
+  bike: "Tyres and chains are usually checked every 3,000–5,000 km.",
+};
 
 export function AddGearPage({ kind, sport, onSave, onBack }: { kind: GearKind; sport: string; onSave: (g: Gear) => void; onBack: () => void }) {
   const [type, setType] = useState<GearKind>(kind);
-  const [name, setName] = useState("");
   const [uses, setUses] = useState<string[]>(() => [...new Set([sport, ...(DEFAULT_USES[kind] ?? [])])]);
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -42,18 +77,21 @@ export function AddGearPage({ kind, sport, onSave, onBack }: { kind: GearKind; s
   const [notes, setNotes] = useState("");
   const [km, setKm] = useState(0);
   const [notify, setNotify] = useState(true);
-  const [limit, setLimit] = useState(DEFAULT_LIMIT[kind] ?? 700);
+  const [limit, setLimit] = useState(0); // blank until they pick a distance
   const [photo, setPhoto] = useState<string>();
-  const [sheet, setSheet] = useState<null | "type" | "uses">(null);
+  const [sheet, setSheet] = useState<null | "type" | "uses" | "brand" | "km" | "limit">(null);
   const file = useRef<HTMLInputElement>(null);
   const t = typeOf(type);
-  const ok = !!name.trim() && uses.length > 0;
+  const isShoe = type === "shoe";
+  // the name reads brand, model: "Nike Pegasus"; the nickname sits under it
+  const name = [brand.trim(), model.trim()].filter(Boolean).join(" ");
+  const ok = !!brand.trim() && !!model.trim() && uses.length > 0;
   const save = () => {
     if (!ok) return;
     onSave({
-      id: `g-${Date.now()}`, kind: type, name: name.trim(), km, limit: TRACKS_KM(type) && notify ? limit : 0,
+      id: `g-${Date.now()}`, kind: type, name, km, limit: TRACKS_KM(type) && notify ? limit : 0,
       img: photo ?? (type === "shoe" ? "/img/auth-shoe.png" : type === "bike" ? "/img/ride-sq.jpg" : ""), uses,
-      brand: brand.trim() || undefined, model: model.trim() || undefined, nickname: nick.trim() || undefined, notes: notes.trim() || undefined,
+      brand: brand.trim(), model: model.trim(), nickname: nick.trim() || undefined, notes: notes.trim() || undefined,
     });
   };
   const usesText = uses.map((id) => activities.find((a) => a.id === id)?.name ?? id).join(", ");
@@ -69,7 +107,7 @@ export function AddGearPage({ kind, sport, onSave, onBack }: { kind: GearKind; s
             {photo ? <img src={photo} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <>
               <ImageSquare size={32} color="var(--blue)" />
               <span style={{ fontSize: 15, fontWeight: 600, color: "var(--blue)" }}>Add a photo</span>
-              <span style={{ fontSize: 13, color: "var(--gray)" }}>Optional. Helps you tell your gear apart.</span>
+              <span style={{ fontSize: 13, color: "var(--gray)" }}>Helps you tell your gear apart.</span>
             </>}
           </button>
           <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhoto(URL.createObjectURL(f)); }} />
@@ -84,11 +122,6 @@ export function AddGearPage({ kind, sport, onSave, onBack }: { kind: GearKind; s
               </button>
             </div>
             <div>
-              <label className="flabel" htmlFor="gear-name">Gear name</label>
-              <input id="gear-name" className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={40}
-                placeholder={type === "shoe" ? "Such as PUMA Nitro White" : type === "bike" ? "Such as Trek Domane AL 2" : "Give it a name"} />
-            </div>
-            <div>
               <span className="flabel">Used for</span>
               <button type="button" className="nf" onClick={() => setSheet("uses")} aria-label={`Used for, ${usesText || "nothing yet"}. Change`} style={picker}>
                 <SportIcon Icon={PersonSimpleRun} size={22} neutral />
@@ -99,42 +132,142 @@ export function AddGearPage({ kind, sport, onSave, onBack }: { kind: GearKind; s
                 <CaretRight size={16} color="var(--gray)" aria-hidden />
               </button>
             </div>
-          </div>
-
-          {TRACKS_KM(type) && <>
-            {head("Usage and reminder", true)}
-            <div style={{ display: "grid", gap: 14 }}>
-              <NumField id="gear-km" label="Distance already on it" value={km} decimals onChange={setKm} suffix="km" placeholder="0" />
-              <label style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, cursor: "pointer" }}>
-                <SportIcon Icon={Bell} size={22} selected={notify} neutral />
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: 15, fontWeight: notify ? 600 : 500 }}>Remind me to replace it</span>
-                  <span className="cap">When it reaches the distance below</span>
-                </span>
-                <input type="checkbox" role="switch" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="switch" />
-              </label>
-              {notify && <NumField id="gear-limit" label="Replace at" value={limit} onChange={setLimit} suffix="km" />}
+            <div>
+              {isShoe ? <>
+                <span className="flabel">Brand name</span>
+                <button type="button" className="nf" onClick={() => setSheet("brand")} aria-label={`Brand name, ${brand || "not picked"}. Change`} style={picker}>
+                  {brand ? <BrandMark name={brand} /> : <SportIcon Icon={Tag} size={22} neutral />}
+                  <span style={{ flex: 1, textAlign: "left", fontSize: 15, fontWeight: brand ? 600 : 400, color: brand ? "var(--ink)" : "var(--gray)" }}>{brand || "Pick a brand"}</span>
+                  <CaretDown size={16} color="var(--gray)" aria-hidden />
+                </button>
+              </> : <>
+                <label className="flabel" htmlFor="gear-brand">Brand name</label>
+                <input id="gear-brand" className="input" value={brand} onChange={(e) => setBrand(e.target.value)} maxLength={30}
+                  placeholder={type === "bike" ? "Such as Trek" : type === "watch" ? "Such as Garmin" : "Such as Decathlon"} />
+              </>}
             </div>
-          </>}
-
-          {head("More details", true)}
-          <div style={{ display: "grid", gap: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }}>
-              <div><label className="flabel" htmlFor="gear-brand">Brand</label><input id="gear-brand" className="input" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="PUMA" maxLength={30} /></div>
-              <div><label className="flabel" htmlFor="gear-model">Model</label><input id="gear-model" className="input" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Nitro" maxLength={30} /></div>
+            <div>
+              <label className="flabel" htmlFor="gear-model">Model</label>
+              <input id="gear-model" className="input" value={model} onChange={(e) => setModel(e.target.value)} maxLength={30}
+                placeholder={isShoe ? "Such as Pegasus 41" : type === "bike" ? "Such as Domane AL 2" : type === "watch" ? "Such as Forerunner 265" : "Such as the model name"} />
             </div>
-            <div><label className="flabel" htmlFor="gear-nick">Nickname</label><input id="gear-nick" className="input" value={nick} onChange={(e) => setNick(e.target.value)} placeholder="Such as White" maxLength={30} /></div>
+            <div>
+              <label className="flabel" htmlFor="gear-nick">Nickname</label>
+              <input id="gear-nick" className="input" value={nick} onChange={(e) => setNick(e.target.value)} maxLength={30} placeholder={isShoe ? "Such as White Shoe" : "Such as Race day"} />
+              {name && <p className="cap" style={{ marginTop: 6 }}>Shows as <b style={{ color: "var(--ink)", fontWeight: 600 }}>{name}</b>{nick.trim() && <> ({nick.trim()})</>}</p>}
+            </div>
             <div>
               <label className="flabel" htmlFor="gear-notes">Notes</label>
               <textarea id="gear-notes" className="input" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Such as my everyday running shoe" maxLength={120}
                 style={{ height: "auto", padding: "12px 16px", resize: "none" }} />
             </div>
           </div>
+
+          {/* the reminder is an extra, so it comes last */}
+          {TRACKS_KM(type) && <>
+            {head("Usage and reminder")}
+            <div style={{ display: "grid", gap: 14 }}>
+              <KmPick label="Distance already on it" value={km} empty="0" onOpen={() => setSheet("km")} />
+              <div>
+                <KmPick label="Replace at" value={limit} empty={`Such as ${(DEFAULT_LIMIT[type] ?? 700).toLocaleString("en-IN")}`} onOpen={() => setSheet("limit")} />
+                {REPLACE_HINT[type] && <p className="cap" style={{ marginTop: 6 }}>{REPLACE_HINT[type]}</p>}
+              </div>
+              {/* the reminder switch sits last, under the distance it uses */}
+              <label style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, cursor: limit ? "pointer" : "default", opacity: limit ? 1 : 0.5 }}>
+                <SportIcon Icon={Bell} size={22} selected={notify && !!limit} neutral />
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 15, fontWeight: notify && limit ? 600 : 500 }}>Remind me to replace it</span>
+                  <span className="cap">{limit ? `When it reaches ${limit.toLocaleString("en-IN")} km` : "Set a replace distance first"}</span>
+                </span>
+                <input type="checkbox" role="switch" checked={notify && !!limit} disabled={!limit} onChange={(e) => setNotify(e.target.checked)} className="switch" />
+              </label>
+            </div>
+          </>}
         </div>
       </Page>
-      {sheet === "type" && <GearTypeSheet value={type} onDone={(k) => { setType(k); if (DEFAULT_LIMIT[k]) setLimit(DEFAULT_LIMIT[k]!); }} onClose={() => setSheet(null)} />}
+      {sheet === "type" && <GearTypeSheet value={type} onDone={(k) => { if (k !== type && (k === "shoe" || type === "shoe")) setBrand(""); setType(k); }} onClose={() => setSheet(null)} />}
       {sheet === "uses" && <UsedForSheet value={uses} onApply={setUses} onClose={() => setSheet(null)} />}
+      {sheet === "km" && (
+        <NumberSheet title="Distance already on it" sub="How far it has gone before you added it here." cta={km > 0 ? "Update" : "Save"} unit="km"
+          value={km || (isShoe ? 100 : 1000)} min={0} max={isShoe ? 3000 : 100000} step={isShoe ? 5 : 50}
+          presets={isShoe ? [0, 50, 100, 200, 300, 500] : [0, 500, 1000, 2000, 5000]}
+          onSave={(v) => setKm(v)} onRemove={km > 0 ? () => { setKm(0); setSheet(null); } : undefined} onClose={() => setSheet(null)} />
+      )}
+      {sheet === "limit" && (
+        <NumberSheet title="Replace at" sub={REPLACE_HINT[type]} cta={limit > 0 ? "Update" : "Save"} unit="km"
+          value={limit || DEFAULT_LIMIT[type] || 700} min={isShoe ? 100 : 500} max={isShoe ? 2000 : 30000} step={isShoe ? 50 : 500}
+          presets={isShoe ? [500, 600, 700, 800] : [3000, 5000, 8000, 10000]}
+          onSave={(v) => setLimit(v)} onRemove={limit > 0 ? () => { setLimit(0); setSheet(null); } : undefined} onClose={() => setSheet(null)} />
+      )}
+      {sheet === "brand" && <BrandSheet value={brand} onDone={setBrand} onClose={() => setSheet(null)} />}
     </>
+  );
+}
+
+// a distance field that opens the wheel sheet, like the metrics on Add activity
+function KmPick({ label, value, empty, onOpen }: { label: string; value: number; empty: string; onOpen: () => void }) {
+  return (
+    <div>
+      <span className="flabel">{label}</span>
+      <button type="button" className="nf" onClick={onOpen} aria-label={`${label}, ${value ? `${value} km` : "not set"}. Change`} style={{ ...picker, padding: "0 14px" }}>
+        <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: value ? 600 : 400, color: value ? "var(--ink)" : "var(--gray)" }}>{value ? value.toLocaleString("en-IN") : empty}</span>
+        <span className="sfx">km</span>
+        <CaretDown size={16} color="var(--gray)" aria-hidden />
+      </button>
+    </div>
+  );
+}
+function BrandSheet({ value, onDone, onClose }: { value: string; onDone: (b: string) => void; onClose: () => void }) {
+  const known = !value || !!brandOf(value);
+  const [sel, setSel] = useState(value);
+  const [q, setQ] = useState("");
+  const [custom, setCustom] = useState(known ? "" : value);
+  const [typing, setTyping] = useState(!known);
+  const term = q.trim().toLowerCase();
+  const groups = SHOE_BRANDS.map((g) => ({ ...g, list: g.list.filter((b) => !term || b.name.toLowerCase().includes(term)) })).filter((g) => g.list.length);
+  const pick = typing ? custom.trim() : sel;
+  return (
+    <Sheet id="gear-brand" title="Select brand" onClose={onClose} expandable
+      head={
+        <div style={{ position: "relative", marginTop: 12 }}>
+          <MagnifyingGlass size={17} color="var(--gray)" aria-hidden style={{ position: "absolute", left: 14, top: 15 }} />
+          <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search brands" aria-label="Search brands" style={{ height: 46, paddingLeft: 40, background: "var(--bg)", borderColor: "transparent" }} />
+        </div>
+      }>
+      <div role="radiogroup" aria-label="Brand">
+        {groups.map((g) => (
+          <div key={g.group}>
+            <p className="cap" style={{ fontSize: 12, fontWeight: 600, margin: "18px 2px 2px" }}>{g.group}</p>
+            {g.list.map((b) => {
+              const on = !typing && sel === b.name;
+              return (
+                <button key={b.name} type="button" role="radio" aria-checked={on} onClick={() => { setSel(b.name); setTyping(false); }}
+                  style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 56, padding: "8px 2px", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
+                  <BrandMark name={b.name} />
+                  <span style={{ flex: 1, fontSize: 15, fontWeight: on ? 600 : 500 }}>{b.name}</span>
+                  <Radio on={on} />
+                </button>
+              );
+            })}
+          </div>
+        ))}
+        {!groups.length && <p className="meta" style={{ padding: "16px 0 4px", fontSize: 14 }}>No brand called “{q.trim()}” in the list. Type it in below.</p>}
+      </div>
+      {/* brands that aren't listed */}
+      {typing ? (
+        <div style={{ marginTop: 18 }}>
+          <label className="flabel" htmlFor="brand-custom">Custom brand</label>
+          <input id="brand-custom" className="input" autoFocus value={custom} onChange={(e) => setCustom(e.target.value)} maxLength={30} placeholder="Type the brand name" />
+        </div>
+      ) : (
+        <button type="button" className="link" style={{ marginTop: 16 }} onClick={() => { setTyping(true); if (!custom && term) setCustom(q.trim()); }}>
+          <Plus size={14} weight="bold" />Add a custom brand
+        </button>
+      )}
+      <div style={{ position: "sticky", bottom: -28, padding: "12px 0 0", marginTop: 8, background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 30%)" }}>
+        <button type="button" className="btn btn-blue" style={{ width: "100%" }} disabled={!pick} onClick={() => { onDone(pick); onClose(); }}>Done</button>
+      </div>
+    </Sheet>
   );
 }
 

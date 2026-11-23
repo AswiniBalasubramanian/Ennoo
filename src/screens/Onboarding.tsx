@@ -675,7 +675,7 @@ export function NumberSheet({ title, sub = "Scroll to set it, tap a preset, or t
 const R60 = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 const TIME_COLS = {
   hms: [{ label: "Hours", items: Array.from({ length: 24 }, (_, i) => String(i)), sep: "h" }, { label: "Minutes", items: R60, sep: "min" }, { label: "Seconds", items: R60, sep: "s" }],
-  sec: [{ label: "Minutes", items: R60, sep: ":" }, { label: "Seconds", items: R60, sep: "." }, { label: "Hundredths", items: Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0")), sep: "" }],
+  sec: [{ label: "Minutes", items: R60, sep: ":" }, { label: "Seconds", items: R60, sep: ":" }, { label: "Hundredths", items: Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0")), sep: "" }],
 };
 /* preset times around the starting value: a little faster and slower, rounded to whole minutes (or half seconds for sprints) */
 function timePresets(fmt: "hms" | "sec", base: number) {
@@ -692,13 +692,18 @@ export function SheetFooter({ cta, onSave, onRemove, disabled }: { cta: string; 
     </div>
   );
 }
-export function TimeSheet({ title, cta, fmt, value, onSave, onClose, onRemove }: { title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void; onRemove?: () => void }) {
+export function TimeSheet({ title, cta, fmt: fmt0, value, onSave, onClose, onRemove, onFmt }: {
+  title: string; cta: string; fmt: "hms" | "sec"; value: number; onSave: (sec: number) => void; onClose: () => void; onRemove?: () => void;
+  onFmt?: (f: "hms" | "sec") => void; // given: the sheet shows the H : M : S / M : S : HS switch
+}) {
+  const [fmt, setFmt] = useState(fmt0);
   const cols = TIME_COLS[fmt];
-  const split = (t: number) => fmt === "hms"
+  const splitAs = (f: "hms" | "sec", t: number) => f === "hms"
     ? [Math.min(23, Math.floor(t / 3600)), Math.floor((t % 3600) / 60), Math.round(t % 60) % 60]
     : [Math.min(59, Math.floor(t / 60)), Math.floor(t % 60), Math.round((t % 1) * 100) % 100];
+  const split = (t: number) => splitAs(fmt, t);
   const start = value > 0 ? value : fmt === "hms" ? 1800 : 60;
-  const [presets] = useState(() => timePresets(fmt, start));
+  const presets = useMemo(() => timePresets(fmt, start), [fmt, start]);
   const [idx, setIdx] = useState(() => split(start));
   const [custom, setCustom] = useState(false);
   const [cv, setCv] = useState<number[]>(() => cols.map(() => 0));
@@ -713,6 +718,16 @@ export function TimeSheet({ title, cta, fmt, value, onSave, onClose, onRemove }:
   const suffix = fmt === "hms" ? ["h", "min", "s"] : ["min", "s", "1/100"];
   return (
     <Sheet id="time" title={title} sub="Scroll to set it, tap a preset, or type your own." onClose={onClose}>
+      {onFmt && (
+        <div style={{ marginTop: 14 }}>
+          <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "M : S : HS"]]} value={fmt}
+            onChange={(f) => {
+              // keep the time, re-read on the new wheels (M : S : HS tops out at 59:59.99)
+              const t = Math.min(f === "sec" ? 3599.99 : 86399, total > 0 ? total : start);
+              setFmt(f); onFmt(f); setCustom(false); setCv([0, 0, 0]); setIdx(splitAs(f, f === "hms" ? Math.round(t) : t));
+            }} />
+        </div>
+      )}
       <PresetChips custom={custom} onCustom={() => { setCustom(true); setCv(cols.map(() => 0)); setTried(false); focusSoon("time-0"); }}
         presets={presets.map((t) => ({ label: fmtTime(t), on: Math.abs(total - t) < 0.001, pick: () => { setCustom(false); setIdx(split(t)); } }))} />
       {custom ? (
@@ -1220,8 +1235,8 @@ export default function Onboarding({ go, onDone, name = "", initialStep = 0 }: {
                   {m === "performance" && (<>
                     <SheetField label="Distance" Icon={distIcon(act)} value={(goal.perfDist ?? 0) > 0 ? fmtN(goal.perfDist ?? 0) : null} unit={goal.perfUnit} empty="Set a distance" onOpen={() => setPicking("pdist")} error={shown("dist")} />
                     <div>
-                      <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "M : S . ss"]]} value={goal.timeFmt ?? "hms"} onChange={(f) => set({ timeFmt: f })} />
-                      <p className="cap" style={{ marginTop: 6, lineHeight: 1.4 }}>Pick either for any distance. M : S . ss adds hundredths (00–99), like 0:12.50 for 100 m or 1:42.38 for 800 m.</p>
+                      <Seg label="Time format" options={[["hms", "H : M : S"], ["sec", "M : S : HS"]]} value={goal.timeFmt ?? "hms"} onChange={(f) => set({ timeFmt: f })} />
+                      <p className="cap" style={{ marginTop: 6, lineHeight: 1.4 }}>Pick either for any distance. M : S : HS adds hundredths (00–99), like 0:12.50 for 100 m or 1:42.38 for 800 m.</p>
                     </div>
                     <SheetField label="Target time" Icon={Timer} value={goal.target > 0 ? fmtTime(goal.target) : null} empty="Set a time" onOpen={() => setPicking("ptime")} error={shown("time")} />
                     <SheetField label="Current best" optional Icon={Trophy} value={(goal.best ?? 0) > 0 ? fmtTime(goal.best ?? 0) : null} empty="Add your best" onOpen={() => setPicking("pbest")} onClear={() => set({ best: 0 })} error={shown("best")} />

@@ -438,15 +438,15 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         </header>
       </div>
 
-      <div className="pad" style={{ paddingTop: 10, paddingBottom: 150 }}>
+      <div className="pad" style={{ paddingTop: 10, paddingBottom: 8 }}>
         {/* the sketch order: sport, title, how it went, photos, date and time, location */}
         <button type="button" className="nf" onClick={() => setSheet("act")} aria-label={`Activity, ${act.name}. Change`} style={{ width: "100%", height: 56, padding: "0 14px", gap: 12, cursor: "pointer" }}>
           <SportIcon Icon={act.Icon} size={24} />
           <span style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600 }}>{act.name}</span>
           <CaretDown size={18} color="var(--gray)" aria-hidden />
         </button>
-        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={autoTitle} aria-label={`Title. Leave it blank to use ${autoTitle}`} maxLength={80} style={{ marginTop: 12 }} />
-        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How'd it go?" aria-label="How did it go" rows={4}
+        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Title your ${act.name.toLowerCase()}`} aria-label={`Title. Leave it blank to use ${autoTitle}`} maxLength={80} style={{ marginTop: 12 }} />
+        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How'd it go? Share more about your activity and use @ to tag someone." aria-label="How did it go" rows={4}
           style={{ height: "auto", marginTop: 12, padding: "13px 16px", lineHeight: 1.45, resize: "none", fontFamily: "inherit" }} />
 
         <div style={{ marginTop: 12 }}>
