@@ -45,7 +45,7 @@ export function Sheet({ id, title, sub, onClose, children, expandable, head }: {
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 420, damping: 40 }}
         style={{ position: "relative", width: "100%", overflowY: "auto", scrollbarWidth: "none", background: "#fff", boxShadow: "0 -12px 40px -20px rgba(11,18,32,0.4)",
           ...(expandable
-            ? { height: full ? "100%" : "88%", borderRadius: full ? 0 : "24px 24px 0 0", padding: kb ? "0 20px 14px" : "0 20px 28px", transition: "height .32s var(--ease), border-radius .32s var(--ease)" }
+            ? { height: full ? "100%" : "auto", maxHeight: full ? "100%" : "88%", borderRadius: full ? 0 : "24px 24px 0 0", padding: kb ? "0 20px 14px" : "0 20px 28px", transition: "height .32s var(--ease), border-radius .32s var(--ease)" }
             : { maxHeight: "92%", borderRadius: "24px 24px 0 0", padding: kb ? "10px 20px 14px" : "10px 20px 28px" }) }}>
         {expandable ? (
           <div style={{ position: "sticky", top: 0, zIndex: 2, margin: "0 -20px", padding: `${full ? 52 : 10}px 20px 12px`, background: "#fff",

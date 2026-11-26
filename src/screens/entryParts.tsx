@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NumField, TimeSheet } from "./Onboarding";
+import { NumberSheet, Seg, TimeSheet } from "./Onboarding";
 import {
   ArrowLeft, CaretRight, Check, Plus, Minus, MagnifyingGlass, Camera, User, UserPlus, Flag, Target, ProhibitInset,
   Star, X, Bell, Info, Ruler, Timer, Coffee, Stack, ArrowsClockwise, PencilSimple,
@@ -406,14 +406,27 @@ export function srText(s: SR) {
   return `${head}${s.mode === "sets" ? " reps" : ""}${dist}${bits.length ? ` (${bits.join(", ")})` : ""}`;
 }
 
+// the time written the way the sheet's format reads: h:mm:ss, or m:ss.hs
+const asFmt = (sec: number, fmt: "hms" | "sec") => {
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  if (fmt === "sec") { const cs = Math.round(sec * 100); return `${Math.floor(cs / 6000)}:${p2(Math.floor(cs / 100) % 60)}.${p2(cs % 100)}`; }
+  const t = Math.round(sec);
+  return `${Math.floor(t / 3600)}:${p2(Math.floor(t / 60) % 60)}:${p2(t % 60)}`;
+};
 function TimeField({ label, value, fmt, onOpen }: { label: string; value: number; fmt: "hms" | "sec"; onOpen: () => void }) {
   return (
     <button type="button" className="nf" onClick={onOpen} aria-label={`${label}, ${mmss(value)}. Change`} style={{ width: "100%", height: 48, padding: "0 14px", cursor: "pointer" }}>
-      <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600 }}>{mmss(value)}</span>
-      <span className="sfx">{fmt === "sec" ? "m:s:hs" : value >= 3600 ? "h:mm:ss" : "m:ss"}</span>
+      <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: 600 }}>{asFmt(value, fmt)}</span>
+      <span className="sfx">{fmt === "sec" ? "M : S : hs" : "H : M : S"}</span>
     </button>
   );
 }
+// the wheel for each unit: metres in 50s, km and miles to a tenth
+const REP_DIST: Record<SR["unit"], { min: number; max: number; step: number; tenths?: boolean; presets: number[] }> = {
+  m: { min: 50, max: 10000, step: 50, presets: [100, 200, 400, 800, 1000, 1600] },
+  km: { min: 0, max: 50, step: 1, tenths: true, presets: [0.5, 1, 1.5, 2, 3, 5] },
+  mi: { min: 0, max: 30, step: 1, tenths: true, presets: [0.5, 1, 1.5, 2, 3] },
+};
 function CellBtn({ label, value, onOpen }: { label: string; value: number; onOpen: () => void }) {
   return (
     <button type="button" className="srin num" onClick={onOpen} aria-label={`${label}, ${mmss(value)}. Change`}
@@ -461,6 +474,14 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
   const [tab, setTab] = useState(0);
   const [timeFor, setTimeFor] = useState<null | "t" | "r" | "set">(null);
   const [edit, setEdit] = useState(false);
+  const [distOpen, setDistOpen] = useState(false);
+  const [distUnit, setDistUnit] = useState<SR["unit"]>(s.unit);
+  // one distance for every rep that still has the first rep's distance; a unit change converts the rest
+  const saveDist = (v: number, u: SR["unit"]) => setS((x) => {
+    const y = u !== x.unit ? toUnit(x, u) : x;
+    const old = y.sets[0].reps[0].d;
+    return { ...y, sets: y.sets.map((st) => ({ ...st, reps: st.reps.map((rp) => (rp.d === old ? { ...rp, d: v } : rp)) })) };
+  });
   // one rep cell (or the rest after this set) open on the time wheels
   const [cell, setCell] = useState<null | { i: number; f: "t" | "r" } | { i: -1; f: "set" }>(null); // the per-rep table reads as values until Edit is tapped
   const cur = s.sets[Math.min(tab, s.sets.length - 1)];
@@ -516,7 +537,10 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
 
         <h3 className="h2" style={{ fontSize: 16, margin: "22px 0 4px" }}>Add details</h3>
         <Toggle label="Distance per rep" Icon={Ruler} on={s.on.dist} onChange={(v) => on("dist", v)}>
-          <div className="nolabel"><NumField id="sr-dist" label="Distance per rep" value={base.d} decimals onChange={(v) => setAll("d", v)} units={["m", "km", "mi"]} unit={s.unit} onUnit={(u) => setS(toUnit(s, u as SR["unit"]))} /></div>
+          <button type="button" className="nf" onClick={() => { setDistUnit(s.unit); setDistOpen(true); }} aria-label={`Distance per rep, ${base.d ? `${base.d} ${s.unit}` : "not set"}. Change`} style={{ width: "100%", height: 48, padding: "0 14px", cursor: "pointer" }}>
+            <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: base.d ? 600 : 400, color: base.d ? "var(--ink)" : "var(--gray)" }}>{base.d ? base.d.toLocaleString("en-IN") : "Such as 400"}</span>
+            <span className="sfx">{s.unit}</span>
+          </button>
         </Toggle>
         <Toggle label="Time per rep" Icon={Timer} on={s.on.time} onChange={(v) => on("time", v)}>
           <TimeField label="Time per rep" value={base.t} fmt={s.tfmt ?? "hms"} onOpen={() => setTimeFor("t")} />
@@ -586,6 +610,13 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
       </div>
     </Page>
     <AnimatePresence>
+      {distOpen && (
+        <NumberSheet key={`rep-d-${distUnit}`} title="Distance per rep" cta="Set distance" unit={distUnit}
+          value={(s.unit === distUnit ? base.d : Math.round(((base.d * SR_M[s.unit]) / SR_M[distUnit]) * 10) / 10) || REP_DIST[distUnit].presets[2]}
+          min={REP_DIST[distUnit].min} max={REP_DIST[distUnit].max} step={REP_DIST[distUnit].step} tenths={REP_DIST[distUnit].tenths} presets={REP_DIST[distUnit].presets}
+          head={<div style={{ marginTop: 14 }}><Seg label="Unit" options={[["m", "Metres"], ["km", "Kilometres"], ["mi", "Miles"]]} value={distUnit} onChange={setDistUnit} /></div>}
+          onSave={(v) => saveDist(v, distUnit)} onClose={() => setDistOpen(false)} />
+      )}
       {timeFor === "t" && (
         <TimeSheet key="rep-t" title="Time per rep" cta="Set time" fmt={s.tfmt ?? "hms"} value={base.t}
           onFmt={(f) => setS((x) => ({ ...x, tfmt: f }))} onSave={(v) => setAll("t", v)} onClose={() => setTimeFor(null)} />

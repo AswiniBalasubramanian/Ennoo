@@ -274,6 +274,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
   // metrics
   const [dist, setDist] = useState({ v: 0, u: "km" });
   const [time, setTime] = useState(0);
+  const [durFmt, setDurFmt] = useState<"hms" | "sec">("hms"); // H : M : S, or M : S : hs for short efforts
   const [n, setN] = useState<Record<string, number>>({});
   const num = (k: string) => n[k] ?? 0;
   const setNum = (k: string) => (v: number) => setN((x) => ({ ...x, [k]: v }));
@@ -446,7 +447,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
           <CaretDown size={18} color="var(--gray)" aria-hidden />
         </button>
         <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Title your ${act.name.toLowerCase()}`} aria-label={`Title. Leave it blank to use ${autoTitle}`} maxLength={80} style={{ marginTop: 12 }} />
-        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How'd it go? Share more about your activity and use @ to tag someone." aria-label="How did it go" rows={4}
+        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How'd it go? Share more about your activity." aria-label="How did it go" rows={4}
           style={{ height: "auto", marginTop: 12, padding: "13px 16px", lineHeight: 1.45, resize: "none", fontFamily: "inherit" }} />
 
         <div style={{ marginTop: 12 }}>
@@ -550,8 +551,9 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         <FeelPicker value={feel} onChange={setFeel} />
 
         {head("Mark this day")}
-        <div role="group" aria-label="Mark this day" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[...MARK_TOP, ...marks.filter((m) => !MARK_TOP.includes(m))].map((m) => chip(m, marks.includes(m), () => setMarks(marks.includes(m) ? marks.filter((x) => x !== m) : [...marks, m]), MARK_ICON[m]))}
+        {/* one mark per day: picking another replaces it, tapping it again clears it */}
+        <div role="radiogroup" aria-label="Mark this day" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {[...MARK_TOP, ...marks.filter((m) => !MARK_TOP.includes(m))].map((m) => chip(m, marks.includes(m), () => setMarks(marks.includes(m) ? [] : [m]), MARK_ICON[m]))}
         </div>
 
         {head("Tags")}
@@ -621,7 +623,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         {sheet === "date" && <DateSheet value={when} now={now} onSave={setDate} onClose={() => setSheet(null)} />}
         {sheet === "clock" && <ClockSheet value={when} now={now} onSave={setWhen} onClose={() => setSheet(null)} />}
         {sheet === "dist" && <DistanceSheet title="Distance" cta="Set distance" value={dist.v || 5} unit={dist.u} onSave={(v, u) => setDist({ v, u })} onRemove={dist.v > 0 ? askToRemove("distance") : undefined} onClose={() => setSheet(null)} />}
-        {sheet === "time" && <TimeSheet title="Duration" cta="Set duration" fmt="hms" value={time} onSave={setTime} onRemove={time > 0 ? askToRemove("duration") : undefined} onClose={() => setSheet(null)} />}
+        {sheet === "time" && <TimeSheet title="Duration" cta="Set duration" fmt={durFmt} onFmt={setDurFmt} value={time} onSave={setTime} onRemove={time > 0 ? askToRemove("duration") : undefined} onClose={() => setSheet(null)} />}
         {sheet === "loc" && (
           <Sheet id="loc" title="Location" sub="Search places near you, or pin a new one on the map." expandable onClose={() => setSheet(null)}>
             <div style={{ marginTop: 14 }}>
