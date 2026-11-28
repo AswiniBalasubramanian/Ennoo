@@ -482,19 +482,22 @@ export function LocationSheet({ onAllow, onDeny }: { onAllow: () => void; onDeny
    Switching the unit converts the number rather than keeping it, so 100 km becomes 62.1 mi. */
 const DIST_UNITS = ["km", "mi", "m"] as const;
 const TO_M = { km: 1000, mi: 1609.344, m: 1 };
-const wholesFor = (u: string) => (u === "m" ? Array.from({ length: 500 }, (_, i) => (i + 1) * 100) : Array.from({ length: 5000 }, (_, i) => i + 1));
+// short: a rep distance. Metres in 50s up to 10 km; km and miles start at 0 so 0.2 mi or 0.4 km can be set
+const wholesFor = (u: string, short?: boolean) => (u === "m"
+  ? (short ? Array.from({ length: 200 }, (_, i) => (i + 1) * 50) : Array.from({ length: 500 }, (_, i) => (i + 1) * 100))
+  : (short ? Array.from({ length: 51 }, (_, i) => i) : Array.from({ length: 5000 }, (_, i) => i + 1)));
 const presetsFor = (u: string) => (u === "m" ? [1000, 5000, 10000, 21100, 42200] : [50, 100, 250, 500, 1000]);
-export function DistanceSheet({ value, unit, onSave, onClose, onRemove, title = "Target distance", cta = "Set distance" }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; onRemove?: () => void; title?: string; cta?: string }) {
+export function DistanceSheet({ value, unit, onSave, onClose, onRemove, title = "Target distance", cta = "Set distance", short, presets }: { value: number; unit: string; onSave: (v: number, u: string) => void; onClose: () => void; onRemove?: () => void; title?: string; cta?: string; short?: boolean; presets?: (u: string) => number[] }) {
   const place = (v: number, u: string) => {
-    const ws = wholesFor(u);
-    if (u === "m") { const i = Math.max(0, Math.min(ws.length - 1, Math.round(v / 100) - 1)); return { w: i, d: 0 }; }
-    const r = Math.max(1, Math.min(5000, Math.round(v * 10) / 10));
-    return { w: Math.floor(r) - 1, d: Math.round((r - Math.floor(r)) * 10) };
+    const ws = wholesFor(u, short);
+    if (u === "m") { const i = Math.max(0, Math.min(ws.length - 1, Math.round(v / (short ? 50 : 100)) - 1)); return { w: i, d: 0 }; }
+    const r = Math.max(short ? 0 : 1, Math.min(ws[ws.length - 1], Math.round(v * 10) / 10));
+    return { w: Math.floor(r) - ws[0], d: Math.round((r - Math.floor(r)) * 10) };
   };
   const [u, setU] = useState(Math.max(0, DIST_UNITS.indexOf(unit as "km")));
   const [{ w, d }, setPos] = useState(() => place(value, unit));
   const uName = DIST_UNITS[u], isM = uName === "m";
-  const ws = wholesFor(uName);
+  const ws = wholesFor(uName, short);
   const v = ws[w] + (isM ? 0 : d / 10);
   const switchUnit = (i: number) => { const to = DIST_UNITS[i]; setPos(place((v * TO_M[uName]) / TO_M[to], to)); setU(i); };
   // Custom: type any number and pick the unit, instead of scrolling
@@ -514,7 +517,7 @@ export function DistanceSheet({ value, unit, onSave, onClose, onRemove, title = 
         <button type="button" className="chip" aria-pressed={custom} onClick={() => { setCustom(true); setCVal(0); setCUnit(uName); setCTried(false); }} style={{ flex: "none", height: 34, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 5 }}>
           <Plus size={13} weight="bold" aria-hidden />Custom
         </button>
-        {presetsFor(uName).map((p) => (
+        {(presets ?? presetsFor)(uName).map((p) => (
           <button key={p} type="button" className="chip" aria-pressed={!custom && v === p} onClick={() => { setCustom(false); setPos(place(p, uName)); }} style={{ flex: "none", height: 34, fontSize: 13 }}>
             <span className="num" style={{ letterSpacing: 0 }}>{fmtN(p)} {uName}</span>
           </button>

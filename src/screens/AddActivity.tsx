@@ -3,7 +3,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from "motion/react"
 import {
   ArrowLeft, CaretLeft, CaretRight, MagnifyingGlass, Check, CheckCircle, Plus, Star, Trash, DotsSixVertical, DotsThree,
   CalendarBlank, Clock, ImageSquare, Images, MapPin, CaretDown, Mountains, Metronome,
-  Sneaker, Heartbeat, Fire, Gauge, Bandaids, CloudRain, Trophy, Tag, User, Target, ProhibitInset, Speedometer,
+  Sneaker, Bicycle, Barbell, TennisBall, SoccerBall, Goggles, Snowflake, Backpack, Heartbeat, Fire, Gauge, Bandaids, CloudRain, Trophy, Tag, User, Target, ProhibitInset, Speedometer,
 } from "@phosphor-icons/react";
 import { StatusBar, SportIcon, addWith, type Route } from "../components";
 import { Sheet, Wheel, WheelBand } from "../sheet";
@@ -255,7 +255,10 @@ const entryFor = (a: Activity): Entry[] => {
   if (a.metrics.includes("performance")) for (const need of ["distance", "duration"] as const) if (!m.includes(need)) m.push(need);
   return m;
 };
-const gearKindFor = (a: Activity): "shoe" | "bike" | null => (RUNS.includes(a.id) ? "shoe" : a.group === "Cycling" ? "bike" : null);
+// every sport has gear: shoes for runs and walks, a bike for rides, equipment for the rest
+const gearKindFor = (a: Activity): Gear["kind"] => (RUNS.includes(a.id) || WALKS.includes(a.id) || a.group === "Foot" ? "shoe" : a.group === "Cycling" ? "bike" : "equipment");
+const GEAR_ICON: Record<string, typeof Sneaker> = { Fitness: Barbell, Racket: TennisBall, Team: SoccerBall, Water: Goggles, Snow: Snowflake };
+const gearIconFor = (a: Activity) => (gearKindFor(a) === "shoe" ? Sneaker : gearKindFor(a) === "bike" ? Bicycle : GEAR_ICON[a.group] ?? Backpack);
 const partOfDay = (d: Date) => { const h = d.getHours(); return h < 12 ? "Morning" : h < 17 ? "Afternoon" : h < 21 ? "Evening" : "Night"; };
 // the metric types you used last time for each sport come first next time
 const LAST_KEY = "ennoo.lastMetrics";
@@ -311,7 +314,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
 
   const entries = entryFor(act);
   const extras = extrasFor(act).filter((x) => !(entries as string[]).includes(x));
-  const gearKind = gearKindFor(act);
+  const gearKind = gearKindFor(act), GearIcon = gearIconFor(act);
   const kindGear = gearList.filter((g) => g.kind === gearKind || g.uses?.includes(actId));
   const gearId = gearSel === undefined ? kindGear[0]?.id ?? null : gearSel;
   const gearPicked = kindGear.find((g) => g.id === gearId) ?? null;
@@ -561,7 +564,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
 
         {gearKind && (<>
           {head("Gear")}
-          {gearPicked ? <GearCard g={gearPicked} onClick={() => setSheet("gear")} /> : <DetailRow Icon={Sneaker} label="Gear" placeholder={gearKind === "shoe" ? "Add shoes" : "Add a bike"} onClick={() => setSheet("gear")} />}
+          {gearPicked ? <GearCard g={gearPicked} Icon={GearIcon} onClick={() => setSheet("gear")} /> : <DetailRow Icon={GearIcon} label="Gear" placeholder={gearKind === "shoe" ? "Add shoes" : gearKind === "bike" ? "Add a bike" : `Add ${act.name.toLowerCase()} gear`} onClick={() => setSheet("gear")} />}
         </>)}
 
         {head("With whom")}
@@ -663,7 +666,7 @@ export default function AddActivity({ go }: { go: (r: Route) => void }) {
         {sheet === "tags" && <TagSheet sport={act.name} suggested={tagsFor(actId)} value={tags} custom={customTags} onDone={(t, c) => { setTags(t); setCustomTags(c); }} onClose={() => setSheet(null)} />}
         {sheet === "marks" && <MarkSheet value={marks} onDone={setMarks} onClose={() => setSheet(null)} />}
         {sheet === "gear" && gearKind && (
-          <GearSheet kind={gearKind} list={kindGear} value={gearId} onDone={setGearSel} onClose={() => setSheet(null)}
+          <GearSheet kind={gearKind} Icon={GearIcon} list={kindGear} value={gearId} onDone={setGearSel} onClose={() => setSheet(null)}
             onAdd={() => { setSheet(null); setPage("gear"); }} />
         )}
         {sheet === "people" && <PeopleSheet people={people} value={withIds} onDone={setWithIds} onNew={() => { setSheet(null); setPage("person"); }} onClose={() => setSheet(null)} />}

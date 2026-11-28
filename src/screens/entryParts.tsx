@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { NumberSheet, Seg, TimeSheet } from "./Onboarding";
+import { DistanceSheet, TimeSheet } from "./Onboarding";
 import {
   ArrowLeft, CaretRight, Check, Plus, Minus, MagnifyingGlass, Camera, User, UserPlus, Flag, Target, ProhibitInset,
   Star, X, Bell, Info, Ruler, Timer, Coffee, Stack, ArrowsClockwise, PencilSimple,
@@ -179,16 +179,20 @@ export function MarkSheet({ value, onDone, onClose }: { value: string[]; onDone:
 }
 
 /* ---------- Gear: shoes for runs, bikes for rides; a reminder as it nears its limit ---------- */
-export function GearCard({ g, onClick }: { g: Gear; onClick: () => void }) {
+const tracksKm = (g: Gear) => g.kind === "shoe" || g.kind === "bike";
+const GearThumb = ({ g, Icon, w, h }: { g: Gear; Icon: typeof Bell; w: number; h: number }) => g.img
+  ? <img src={g.img} alt="" style={{ width: w, height: h, objectFit: g.kind === "shoe" ? "contain" : "cover", borderRadius: 10, background: "var(--bg)", flex: "none" }} />
+  : <span aria-hidden style={{ width: w, height: h, borderRadius: 10, background: "var(--blue-50)", color: "var(--blue)", display: "grid", placeItems: "center", flex: "none" }}><Icon size={22} /></span>;
+export function GearCard({ g, onClick, Icon }: { g: Gear; onClick: () => void; Icon: typeof Bell }) {
   const near = g.limit > 0 && g.km / g.limit >= 0.9;
   return (
     <button type="button" onClick={onClick} aria-label={`${g.name}, ${g.km} km. Change gear`}
       style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 14px 10px 10px", borderRadius: 16, border: "1px solid var(--line)", background: "#fff", textAlign: "left" }}>
-      <img src={g.img} alt="" style={{ width: 56, height: 44, objectFit: g.kind === "shoe" ? "contain" : "cover", borderRadius: 10, background: "var(--bg)", flex: "none" }} />
+      <GearThumb g={g} Icon={Icon} w={56} h={44} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontSize: 15, fontWeight: 600 }}>{g.name}{g.nickname && <span className="meta" style={{ fontSize: 13, fontWeight: 500 }}> ({g.nickname})</span>}</span>
         <span className="num" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: near ? "#B54708" : "var(--gray)", marginTop: 2 }}>
-          {near && <Bell size={13} weight="fill" aria-hidden />}{g.km.toLocaleString("en-IN")}{g.limit > 0 ? <> of {g.limit.toLocaleString("en-IN")} km</> : " km used"}{near ? ", due for a swap soon" : ""}
+          {near && <Bell size={13} weight="fill" aria-hidden />}{!tracksKm(g) ? (g.notes || "Used for this activity") : <>{g.km.toLocaleString("en-IN")}</>}{!tracksKm(g) ? null : g.limit > 0 ? <> of {g.limit.toLocaleString("en-IN")} km</> : " km used"}{near ? ", due for a swap soon" : ""}
         </span>
         {g.limit > 0 && <span aria-hidden style={{ display: "block", height: 4, borderRadius: 2, background: "var(--line)", marginTop: 6, overflow: "hidden" }}>
           <span style={{ display: "block", height: "100%", width: `${Math.min(100, (g.km / g.limit) * 100)}%`, background: near ? "#F79009" : "var(--blue)" }} />
@@ -198,21 +202,24 @@ export function GearCard({ g, onClick }: { g: Gear; onClick: () => void }) {
     </button>
   );
 }
-export function GearSheet({ kind, list, value, onDone, onAdd, onClose }: { kind: "shoe" | "bike"; list: Gear[]; value: string | null; onDone: (id: string | null) => void; onAdd: () => void; onClose: () => void }) {
+export function GearSheet({ kind, list, value, onDone, onAdd, onClose, Icon }: { kind: Gear["kind"]; list: Gear[]; value: string | null; onDone: (id: string | null) => void; onAdd: () => void; onClose: () => void; Icon: typeof Bell }) {
   const [sel, setSel] = useState(value);
-  const noun = kind === "shoe" ? "shoes" : "bike";
+  const title = kind === "shoe" ? "Your shoes" : kind === "bike" ? "Your bikes" : "Your gear";
+  const sub = kind === "shoe" ? "We track the distance on each, and remind you when your shoes need a swap."
+    : kind === "bike" ? "We track the distance on each, and remind you when your bike needs a service."
+    : "Pick the gear you used for this activity.";
   return (
-    <Sheet id="gear" title={kind === "shoe" ? "Your shoes" : "Your bikes"} sub={`We track the distance on each, and remind you when your ${noun} need${kind === "shoe" ? "" : "s"} a swap.`} onClose={onClose}>
+    <Sheet id="gear" title={title} sub={sub} onClose={onClose}>
       <div role="radiogroup" aria-label="Gear" style={{ marginTop: 10 }}>
         {list.map((g) => {
           const on = sel === g.id;
           return (
             <button key={g.id} type="button" role="radio" aria-checked={on} onClick={() => setSel(g.id)}
               style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 64, padding: "8px 0", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
-              <img src={g.img || "/img/auth-shoe.png"} alt="" style={{ width: 52, height: 40, objectFit: kind === "shoe" ? "contain" : "cover", borderRadius: 10, background: "var(--bg)" }} />
+              <GearThumb g={g} Icon={Icon} w={52} h={40} />
               <span style={{ flex: 1 }}>
                 <span style={{ display: "block", fontSize: 15, fontWeight: 600 }}>{g.name}{g.nickname && <span className="meta" style={{ fontSize: 13, fontWeight: 500 }}> ({g.nickname})</span>}</span>
-                <span className="num cap">{g.km.toLocaleString("en-IN")} km used</span>
+                <span className="num cap">{tracksKm(g) ? `${g.km.toLocaleString("en-IN")} km used` : g.brand || "Gear"}</span>
               </span>
               <Radio on={on} />
             </button>
@@ -421,12 +428,8 @@ function TimeField({ label, value, fmt, onOpen }: { label: string; value: number
     </button>
   );
 }
-// the wheel for each unit: metres in 50s, km and miles to a tenth
-const REP_DIST: Record<SR["unit"], { min: number; max: number; step: number; tenths?: boolean; presets: number[] }> = {
-  m: { min: 50, max: 10000, step: 50, presets: [100, 200, 400, 800, 1000, 1600] },
-  km: { min: 0, max: 50, step: 1, tenths: true, presets: [0.5, 1, 1.5, 2, 3, 5] },
-  mi: { min: 0, max: 30, step: 1, tenths: true, presets: [0.5, 1, 1.5, 2, 3] },
-};
+// common rep distances for each unit
+const REP_PRESETS: Record<SR["unit"], number[]> = { m: [100, 200, 400, 800, 1000, 1600], km: [0.5, 1, 1.5, 2, 3, 5], mi: [0.25, 0.5, 1, 1.5, 2] };
 function CellBtn({ label, value, onOpen }: { label: string; value: number; onOpen: () => void }) {
   return (
     <button type="button" className="srin num" onClick={onOpen} aria-label={`${label}, ${mmss(value)}. Change`}
@@ -475,7 +478,6 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
   const [timeFor, setTimeFor] = useState<null | "t" | "r" | "set">(null);
   const [edit, setEdit] = useState(false);
   const [distOpen, setDistOpen] = useState(false);
-  const [distUnit, setDistUnit] = useState<SR["unit"]>(s.unit);
   // one distance for every rep that still has the first rep's distance; a unit change converts the rest
   const saveDist = (v: number, u: SR["unit"]) => setS((x) => {
     const y = u !== x.unit ? toUnit(x, u) : x;
@@ -537,7 +539,7 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
 
         <h3 className="h2" style={{ fontSize: 16, margin: "22px 0 4px" }}>Add details</h3>
         <Toggle label="Distance per rep" Icon={Ruler} on={s.on.dist} onChange={(v) => on("dist", v)}>
-          <button type="button" className="nf" onClick={() => { setDistUnit(s.unit); setDistOpen(true); }} aria-label={`Distance per rep, ${base.d ? `${base.d} ${s.unit}` : "not set"}. Change`} style={{ width: "100%", height: 48, padding: "0 14px", cursor: "pointer" }}>
+          <button type="button" className="nf" onClick={() => setDistOpen(true)} aria-label={`Distance per rep, ${base.d ? `${base.d} ${s.unit}` : "not set"}. Change`} style={{ width: "100%", height: 48, padding: "0 14px", cursor: "pointer" }}>
             <span className="num" style={{ flex: 1, textAlign: "left", fontSize: 16, fontWeight: base.d ? 600 : 400, color: base.d ? "var(--ink)" : "var(--gray)" }}>{base.d ? base.d.toLocaleString("en-IN") : "Such as 400"}</span>
             <span className="sfx">{s.unit}</span>
           </button>
@@ -611,11 +613,8 @@ export function SetsRepsPage({ value, sport, onSave, onRemove, onBack }: { value
     </Page>
     <AnimatePresence>
       {distOpen && (
-        <NumberSheet key={`rep-d-${distUnit}`} title="Distance per rep" cta="Set distance" unit={distUnit}
-          value={(s.unit === distUnit ? base.d : Math.round(((base.d * SR_M[s.unit]) / SR_M[distUnit]) * 10) / 10) || REP_DIST[distUnit].presets[2]}
-          min={REP_DIST[distUnit].min} max={REP_DIST[distUnit].max} step={REP_DIST[distUnit].step} tenths={REP_DIST[distUnit].tenths} presets={REP_DIST[distUnit].presets}
-          head={<div style={{ marginTop: 14 }}><Seg label="Unit" options={[["m", "Metres"], ["km", "Kilometres"], ["mi", "Miles"]]} value={distUnit} onChange={setDistUnit} /></div>}
-          onSave={(v) => saveDist(v, distUnit)} onClose={() => setDistOpen(false)} />
+        <DistanceSheet short title="Distance per rep" cta="Set distance" unit={s.unit} value={base.d || (s.unit === "m" ? 400 : 0.5)}
+          presets={(u) => REP_PRESETS[u as SR["unit"]]} onSave={(v, u) => saveDist(v, u as SR["unit"])} onClose={() => setDistOpen(false)} />
       )}
       {timeFor === "t" && (
         <TimeSheet key="rep-t" title="Time per rep" cta="Set time" fmt={s.tfmt ?? "hms"} value={base.t}
